@@ -1,0 +1,53 @@
+{
+  "name": "@openadam/standard-expression-interpreter",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Deterministic semantic interpreter for standardized micro-languages used by agents.",
+  "type": "module",
+  "bin": {
+    "sei": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "docs",
+    "schemas",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "postbuild": "node scripts/set-cli-mode.mjs",
+    "check": "npm run typecheck && npm run test && npm run check:schemas && npm run check:safety && npm run build",
+    "check:safety": "node scripts/check-safety.mjs",
+    "check:schemas": "node --import tsx scripts/check-schemas.ts",
+    "generate:schemas": "node --import tsx scripts/generate-schemas.ts",
+    "start": "node --import tsx src/cli.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "ajv": "8.20.0",
+    "content-type": "2.0.0",
+    "cron-parser": "5.8.1",
+    "ipaddr.js": "2.5.0",
+    "iso8601-duration": "2.1.4",
+    "semver": "7.8.5",
+    "uri-js": "4.4.1"
+  },
+  "devDependencies": {
+    "@types/node": "26.2.0",
+    "@types/semver": "7.8.0",
+    "tsx": "4.23.12",
+    "typescript": "7.0.2",
+    "vitest": "4.1.10"
+  }
+}

@@ -1,0 +1,137 @@
+[
+  {
+    "id": "cron-unix-weekdays",
+    "request": {
+      "op": "interpret",
+      "kind": "cron",
+      "dialect": "unix-5",
+      "expression": "0 9 * * MON-FRI"
+    },
+    "expected": { "ok": true, "normalized": "0 9 * * 1-5" }
+  },
+  {
+    "id": "semver-caret",
+    "request": {
+      "op": "interpret",
+      "kind": "semver_range",
+      "expression": "^3.2.0"
+    },
+    "expected": { "ok": true, "normalized": ">=3.2.0 <4.0.0-0" }
+  },
+  {
+    "id": "cidr-host-bits",
+    "request": {
+      "op": "interpret",
+      "kind": "cidr",
+      "expression": "192.168.1.51/24"
+    },
+    "expected": {
+      "ok": true,
+      "normalized": "192.168.1.0/24",
+      "diagnostic_codes": ["W_CIDR_HOST_BITS_CLEARED"]
+    }
+  },
+  {
+    "id": "uri-normalization",
+    "request": {
+      "op": "interpret",
+      "kind": "uri",
+      "expression": "HTTP://Example.COM:80/a/../b"
+    },
+    "expected": { "ok": true, "normalized": "http://example.com/b" }
+  },
+  {
+    "id": "content-type-parameters",
+    "request": {
+      "op": "interpret",
+      "kind": "content_type",
+      "expression": "Text/HTML; Charset=utf-8; boundary=\"a b\""
+    },
+    "expected": {
+      "ok": true,
+      "normalized": "text/html; boundary=\"a b\"; charset=utf-8"
+    }
+  },
+  {
+    "id": "iso-duration-components",
+    "request": {
+      "op": "interpret",
+      "kind": "iso_duration",
+      "expression": "P1DT3H"
+    },
+    "expected": { "ok": true, "normalized": "P1DT3H" }
+  },
+  {
+    "id": "unix-permission-symbolic",
+    "request": {
+      "op": "interpret",
+      "kind": "unix_permission",
+      "expression": "rwxr-xr-x"
+    },
+    "expected": { "ok": true, "normalized": "0755" }
+  },
+  {
+    "id": "cron-field-count-negative",
+    "request": {
+      "op": "interpret",
+      "kind": "cron",
+      "dialect": "unix-5",
+      "expression": "0 0 9 * * 1-5"
+    },
+    "expected": { "ok": false, "diagnostic_codes": ["E_CRON_FIELD_COUNT"] }
+  },
+  {
+    "id": "semver-negative",
+    "request": {
+      "op": "interpret",
+      "kind": "semver_range",
+      "expression": "^not-a-version"
+    },
+    "expected": { "ok": false, "diagnostic_codes": ["E_SEMVER_RANGE_PARSE"] }
+  },
+  {
+    "id": "cidr-negative",
+    "request": {
+      "op": "interpret",
+      "kind": "cidr",
+      "expression": "192.168.1.1/99"
+    },
+    "expected": { "ok": false, "diagnostic_codes": ["E_CIDR_PARSE"] }
+  },
+  {
+    "id": "uri-relative-negative",
+    "request": {
+      "op": "interpret",
+      "kind": "uri",
+      "expression": "../relative/path"
+    },
+    "expected": { "ok": false, "diagnostic_codes": ["E_URI_ABSOLUTE_REQUIRED"] }
+  },
+  {
+    "id": "content-type-negative",
+    "request": {
+      "op": "interpret",
+      "kind": "content_type",
+      "expression": "not a content type"
+    },
+    "expected": { "ok": false, "diagnostic_codes": ["E_CONTENT_TYPE_PARSE"] }
+  },
+  {
+    "id": "duration-unanchored-negative",
+    "request": {
+      "op": "interpret",
+      "kind": "iso_duration",
+      "expression": "junkP1D"
+    },
+    "expected": { "ok": false, "diagnostic_codes": ["E_DURATION_PARSE"] }
+  },
+  {
+    "id": "permission-negative",
+    "request": {
+      "op": "interpret",
+      "kind": "unix_permission",
+      "expression": "999"
+    },
+    "expected": { "ok": false, "diagnostic_codes": ["E_PERMISSION_PARSE"] }
+  }
+]
