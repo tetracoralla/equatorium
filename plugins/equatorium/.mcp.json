@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "equatorium": {
+      "command": "node",
+      "args": ["runtime/equatorium-mcp.mjs"],
+      "cwd": "."
+    }
+  }
+}

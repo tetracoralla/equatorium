@@ -1,0 +1,2 @@
+plugins/equatorium/runtime/*.mjs -whitespace
+plugins/equatorium/runtime/*.js -whitespace

@@ -153,13 +153,13 @@ export class IsoDurationAdapter implements ExpressionAdapter {
   }
 
   detect(expression: string): DetectionCandidate | null {
-    if (!FULL_DURATION.test(expression.trim())) return null;
+    if (!FULL_DURATION.test(expression)) return null;
     try {
-      const { present } = exactDuration(expression.trim());
+      const { present } = exactDuration(expression);
       if (present.has("weeks") && [...present].some((name) => name !== "weeks")) {
         return null;
       }
-      parse(expression.trim());
+      parse(expression);
       return {
         kind: "iso_duration",
         dialect: "iso8601-1",

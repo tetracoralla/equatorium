@@ -105,7 +105,7 @@
       "kind": "uri",
       "expression": "../relative/path"
     },
-    "expected": { "ok": false, "diagnostic_codes": ["E_URI_ABSOLUTE_REQUIRED"] }
+    "expected": { "ok": false, "diagnostic_codes": ["E_URI_SCHEME_REQUIRED"] }
   },
   {
     "id": "content-type-negative",

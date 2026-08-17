@@ -1,4 +1,5 @@
 import { parentPort, workerData } from "node:worker_threads";
+import { workerEnvelope } from "./worker-fixture-protocol.mjs";
 
 const provenance = {
   spec: "fixture",
@@ -8,7 +9,7 @@ const provenance = {
 };
 
 if (workerData.op === "query") {
-  parentPort.postMessage({
+  parentPort.postMessage(workerEnvelope(workerData, {
     schema_version: "sei.result.v1",
     ok: true,
     operation: "query",
@@ -21,9 +22,9 @@ if (workerData.op === "query") {
     provenance,
     query_name: "intersects",
     query_result: { range: ">=1.5.0", intersects: true },
-  });
+  }));
 } else if (workerData.op === "convert") {
-  parentPort.postMessage({
+  parentPort.postMessage(workerEnvelope(workerData, {
     schema_version: "sei.result.v1",
     ok: true,
     operation: "convert",
@@ -36,9 +37,9 @@ if (workerData.op === "query") {
     provenance,
     conversion_target: "octal",
     converted: { representation: "octal", expression: "0755" },
-  });
+  }));
 } else if (workerData.expression === "^2") {
-  parentPort.postMessage({
+  parentPort.postMessage(workerEnvelope(workerData, {
     schema_version: "sei.result.v1",
     ok: true,
     operation: "interpret",
@@ -50,9 +51,9 @@ if (workerData.op === "query") {
     diagnostics: [],
     provenance,
     value: { scheme: "https", path: "/" },
-  });
+  }));
 } else if (workerData.expression === "^3") {
-  parentPort.postMessage({
+  parentPort.postMessage(workerEnvelope(workerData, {
     schema_version: "sei.result.v1",
     ok: true,
     operation: "normalize",
@@ -64,9 +65,9 @@ if (workerData.op === "query") {
     diagnostics: [],
     provenance,
     value: { comparator_sets: [[{ operator: ">=", version: "3.0.0" }]] },
-  });
+  }));
 } else {
-  parentPort.postMessage({
+  parentPort.postMessage(workerEnvelope(workerData, {
     schema_version: "sei.result.v1",
     ok: true,
     operation: "interpret",
@@ -78,5 +79,5 @@ if (workerData.op === "query") {
     diagnostics: [],
     provenance,
     value: { comparator_sets: [[{ operator: ">=", version: "9.0.0" }]] },
-  });
+  }));
 }

@@ -4,6 +4,7 @@ import { defaultRegistry } from "./default-registry.js";
 import {
   interpretBatchBounded,
   interpretBounded,
+  WORKER_ADMISSION_LIMITS,
   WORKER_RESOURCE_LIMITS,
 } from "./core/bounded.js";
 import { BATCH_LIMITS } from "./core/batch.js";
@@ -194,6 +195,7 @@ function discoveryLimits(): JsonObject {
       max_string_length: RESPONSE_STRUCTURAL_LIMITS.max_string_length,
     },
     worker_memory_mb: WORKER_RESOURCE_LIMITS,
+    worker_admission: WORKER_ADMISSION_LIMITS,
     cli_batch: {
       max_items: MAX_BATCH_ITEMS,
       max_stdin_bytes: MAX_STDIN_BYTES,

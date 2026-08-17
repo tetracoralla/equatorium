@@ -1,0 +1,11 @@
+Bundled license information:
+
+content-type/dist/index.js:
+  /*!
+   * content-type
+   * Copyright(c) 2015 Douglas Christopher Wilson
+   * MIT Licensed
+   */
+
+uri-js/dist/es5/uri.all.js:
+  /** @license URI.js v4.4.1 (c) 2011 Gary Court. License: http://github.com/garycourt/uri-js */

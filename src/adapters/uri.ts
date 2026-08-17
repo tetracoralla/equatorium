@@ -77,7 +77,7 @@ function assertAuthority(authority: string, code: string): void {
 
 function parseStrictUri(
   value: string,
-  options: { absolute: boolean; code: string; absoluteCode?: string },
+  options: { requireScheme: boolean; code: string; schemeRequiredCode?: string },
 ): StrictUriParts {
   if (!/^[\x21-\x7E]*$/.test(value)) {
     failUri(options.code, "URI input must contain visible ASCII characters only; use percent encoding for octets.");
@@ -88,10 +88,10 @@ function parseStrictUri(
   const match = URI_STRUCTURE.exec(value);
   if (match === null) failUri(options.code, "Input does not match RFC 3986 URI-reference structure.");
   const [, scheme, authorityMarker, authority, path = "", query, fragment] = match;
-  if (options.absolute && scheme === undefined) {
+  if (options.requireScheme && scheme === undefined) {
     failUri(
-      options.absoluteCode ?? options.code,
-      "RFC 3986 absolute URI input must include a scheme.",
+      options.schemeRequiredCode ?? options.code,
+      "RFC 3986 URI input must include a scheme.",
     );
   }
   if (authorityMarker !== undefined) {
@@ -129,8 +129,8 @@ function parseStrictUri(
 export class UriAdapter implements ExpressionAdapter {
   readonly descriptor: AdapterDescriptor = {
     kind: "uri",
-    title: "Absolute URI",
-    summary: "Interpret and normalize absolute RFC 3986 URI strings.",
+    title: "RFC 3986 URI with scheme",
+    summary: "Interpret and normalize RFC 3986 URI strings that include a scheme, with optional fragments.",
     dialects: ["rfc3986"],
     default_dialect: "rfc3986",
     capabilities: ["interpret", "validate", "normalize", "query.resolve", "query.equals"],
@@ -153,7 +153,7 @@ export class UriAdapter implements ExpressionAdapter {
     query_contracts: [
       {
         name: "resolve",
-        summary: "Resolve a bounded URI reference against this absolute URI.",
+        summary: "Resolve a bounded URI reference against this scheme-qualified URI.",
         arguments: {
           type: "object",
           properties: {
@@ -201,15 +201,15 @@ export class UriAdapter implements ExpressionAdapter {
       spec: "RFC3986",
       engine: "uri-js",
       engine_version: packageVersion("uri-js"),
-      compatibility_mode: "absolute-uri",
+      compatibility_mode: "scheme-qualified-uri",
     },
   };
 
   interpret(input: AdapterInput): AdapterInterpretation {
     parseStrictUri(input.expression, {
-      absolute: true,
+      requireScheme: true,
       code: "E_URI_PARSE",
-      absoluteCode: "E_URI_ABSOLUTE_REQUIRED",
+      schemeRequiredCode: "E_URI_SCHEME_REQUIRED",
     });
     const parsed = URI.parse(input.expression);
     if (parsed.error !== undefined) {
@@ -218,7 +218,7 @@ export class UriAdapter implements ExpressionAdapter {
       });
     }
     if (parsed.scheme === undefined) {
-      throw new SeiError("E_URI_ABSOLUTE_REQUIRED", "RFC 3986 URI input must include a scheme.", {
+      throw new SeiError("E_URI_SCHEME_REQUIRED", "RFC 3986 URI input must include a scheme.", {
         expected: { example: "https://example.com/path" },
       });
     }
@@ -266,9 +266,9 @@ export class UriAdapter implements ExpressionAdapter {
           "URI query 'resolve' requires arguments.reference as a URI reference string.",
         );
       }
-      parseStrictUri(reference, { absolute: false, code: "E_QUERY_INVALID" });
+      parseStrictUri(reference, { requireScheme: false, code: "E_QUERY_INVALID" });
       const resolved = URI.resolve(interpretation.normalized, reference);
-      parseStrictUri(resolved, { absolute: true, code: "E_QUERY_INVALID" });
+      parseStrictUri(resolved, { requireScheme: true, code: "E_QUERY_INVALID" });
       const parsed = URI.parse(resolved);
       if (parsed.error !== undefined) {
         throw new SeiError("E_QUERY_INVALID", parsed.error);
@@ -283,7 +283,7 @@ export class UriAdapter implements ExpressionAdapter {
           "URI query 'equals' requires arguments.uri as a URI string.",
         );
       }
-      parseStrictUri(candidate, { absolute: true, code: "E_QUERY_INVALID" });
+      parseStrictUri(candidate, { requireScheme: true, code: "E_QUERY_INVALID" });
       return { uri: candidate, equals: URI.equal(interpretation.normalized, candidate) };
     }
     throw new SeiError("E_QUERY_UNSUPPORTED", `URI query '${query.name}' is not supported.`, {
@@ -292,16 +292,16 @@ export class UriAdapter implements ExpressionAdapter {
   }
 
   detect(expression: string): DetectionCandidate | null {
-    if (!/^\s*[A-Za-z][A-Za-z0-9+.-]*:/.test(expression)) return null;
+    if (!/^[A-Za-z][A-Za-z0-9+.-]*:/.test(expression)) return null;
     try {
-      parseStrictUri(expression.trim(), { absolute: true, code: "E_URI_PARSE" });
-      const parsed = URI.parse(expression.trim());
+      parseStrictUri(expression, { requireScheme: true, code: "E_URI_PARSE" });
+      const parsed = URI.parse(expression);
       if (parsed.error !== undefined || parsed.scheme === undefined) return null;
       return {
           kind: "uri",
           dialect: "rfc3986",
           confidence: 0.98,
-          reason: "The input begins with a valid URI scheme and parses as an absolute URI.",
+          reason: "The input begins with a valid URI scheme and parses as an RFC 3986 URI.",
           supported: true,
         };
     } catch {

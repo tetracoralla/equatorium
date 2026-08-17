@@ -288,9 +288,9 @@ export class CidrAdapter implements ExpressionAdapter {
   }
 
   detect(expression: string): DetectionCandidate | null {
-    if (!/^\s*[^/\s]+\/\d{1,3}\s*$/.test(expression)) return null;
+    if (!/^[^/\s]+\/\d{1,3}$/.test(expression)) return null;
     try {
-      parseStrictCidr(expression.trim());
+      parseStrictCidr(expression);
       return {
         kind: "cidr",
         dialect: "cidr",

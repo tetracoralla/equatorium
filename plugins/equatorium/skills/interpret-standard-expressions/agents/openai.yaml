@@ -1,0 +1,9 @@
+interface:
+  display_name: "Equatorium"
+  short_description: "Interpret compact standard expressions reliably with Equatorium."
+  default_prompt: "Use $interpret-standard-expressions to evaluate this standard expression deterministically."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "equatorium"
+      description: "Equatorium's bounded deterministic standard-expression interpreter"

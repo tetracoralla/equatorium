@@ -72,7 +72,10 @@ function enforceDeadline(startedAt: number, maxExecutionMs: number): void {
   }
 }
 
-function compactFailure(result: SeiFailure, limits: typeof HARD_LIMITS): SeiFailure | undefined {
+function compactFailure(
+  result: SeiFailure,
+  limits: typeof HARD_LIMITS,
+): SeiFailure | undefined {
   const correlationDetails = {
     input_truncated: result.input.length > 64,
     kind_omitted: result.kind !== undefined && result.kind.length > 64,
@@ -120,7 +123,10 @@ function compactFailure(result: SeiFailure, limits: typeof HARD_LIMITS): SeiFail
   }
 }
 
-function finalizeResult(result: SeiResult, limits: typeof HARD_LIMITS): SeiResult {
+function finalizeResult(
+  result: SeiResult,
+  limits: typeof HARD_LIMITS,
+): SeiResult {
   try {
     enforceResponseBoundary(result, limits);
     return result;
@@ -135,14 +141,18 @@ function finalizeResult(result: SeiResult, limits: typeof HARD_LIMITS): SeiResul
       ok: false,
       operation: result.operation,
       input: result.input.slice(0, 64),
+      ...(result.kind !== undefined && result.kind.length <= 64 ? { kind: result.kind } : {}),
+      ...(result.dialect !== undefined && result.dialect.length <= 64
+        ? { dialect: result.dialect }
+        : {}),
       diagnostics: [
         {
           ...diagnostic,
           details: {
             ...(diagnostic.details ?? {}),
             input_truncated: result.input.length > 64,
-            kind_omitted: result.kind !== undefined,
-            dialect_omitted: result.dialect !== undefined,
+            kind_omitted: result.kind !== undefined && result.kind.length > 64,
+            dialect_omitted: result.dialect !== undefined && result.dialect.length > 64,
           },
         },
       ],

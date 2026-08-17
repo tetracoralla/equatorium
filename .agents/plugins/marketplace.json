@@ -1,0 +1,20 @@
+{
+  "name": "equatorium",
+  "interface": {
+    "displayName": "Equatorium"
+  },
+  "plugins": [
+    {
+      "name": "equatorium",
+      "source": {
+        "source": "local",
+        "path": "./plugins/equatorium"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 import { parentPort, workerData } from "node:worker_threads";
+import { workerEnvelope } from "./worker-fixture-protocol.mjs";
 
-parentPort.postMessage({
+parentPort.postMessage(workerEnvelope(workerData, {
   schema_version: "sei.result.v1",
   ok: true,
   operation: "interpret",
@@ -21,4 +22,4 @@ parentPort.postMessage({
     compatibility_mode: "fixture",
   },
   value: { comparator_sets: [[{ operator: ">=", version: "1.0.0" }]] },
-});
+}));

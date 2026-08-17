@@ -63,6 +63,7 @@ describe("CLI runtime", () => {
       limits: {
         per_request: { max_request_bytes: number; max_execution_ms: number };
         response_structure: { max_collection_entries: number };
+        worker_admission: { max_concurrent: number; max_queued: number };
         cli_batch: { max_items: number; max_stdin_bytes: number; max_execution_ms: number };
       };
       adapters: Array<{ kind: string; query_contracts?: unknown[] }>;
@@ -70,6 +71,7 @@ describe("CLI runtime", () => {
     expect(result.limits.per_request.max_request_bytes).toBe(32_768);
     expect(result.limits.per_request.max_execution_ms).toBe(1_000);
     expect(result.limits.response_structure.max_collection_entries).toBe(4_096);
+    expect(result.limits.worker_admission).toEqual({ max_concurrent: 4, max_queued: 32 });
     expect(result.limits.cli_batch).toMatchObject({
       max_items: 50,
       max_stdin_bytes: 262_144,

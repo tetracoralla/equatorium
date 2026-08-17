@@ -289,7 +289,10 @@ function describeField(label: string, wildcard: boolean, values: (number | strin
   return wildcard ? `${label}=any` : `${label}=${values.join(",")}`;
 }
 
-function fieldValue(field: { wildcard: boolean; values: (number | string)[] }): JsonValue {
+function fieldValue(
+  field: { wildcard: boolean; values: (number | string)[] },
+  maxOutputItems: number,
+): JsonValue {
   if (field.wildcard) return { type: "any" };
   if (
     field.values.length > 1 &&
@@ -301,6 +304,12 @@ function fieldValue(field: { wildcard: boolean; values: (number | string)[] }): 
       from: field.values[0] as number,
       to: field.values.at(-1) as number,
     };
+  }
+  if (field.values.length > maxOutputItems) {
+    throw new SeiError(
+      "E_RESOURCE_LIMIT",
+      `Cron field output contains ${field.values.length} values, exceeding max_output_items=${maxOutputItems}.`,
+    );
   }
   return { type: "set", values: field.values };
 }
@@ -530,11 +539,11 @@ export class CronAdapter implements ExpressionAdapter {
     return {
       normalized,
       value: {
-        minute: fieldValue(serialized.minute),
-        hour: fieldValue(serialized.hour),
-        day_of_month: fieldValue(serialized.dayOfMonth),
-        month: fieldValue(serialized.month),
-        day_of_week: fieldValue(serialized.dayOfWeek),
+        minute: fieldValue(serialized.minute, input.limits.max_output_items),
+        hour: fieldValue(serialized.hour, input.limits.max_output_items),
+        day_of_month: fieldValue(serialized.dayOfMonth, input.limits.max_output_items),
+        month: fieldValue(serialized.month, input.limits.max_output_items),
+        day_of_week: fieldValue(serialized.dayOfWeek, input.limits.max_output_items),
       },
       semantics: {
         timezone,
@@ -583,9 +592,8 @@ export class CronAdapter implements ExpressionAdapter {
       });
       return {
         kind: "cron",
-        dialect: "unix-5",
         confidence: 0.98,
-        reason: "The input is a valid five-field cron expression.",
+        reason: "The input is a valid five-field cron expression; choose unix-5 or github-actions explicitly.",
         supported: true,
       };
     } catch {

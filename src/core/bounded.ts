@@ -19,10 +19,15 @@ import {
   parseRequest,
   resolveLimits,
 } from "./request.js";
+import {
+  readWorkerResultEnvelope,
+  requestCorrelationDigest,
+} from "./worker-protocol.js";
 
 interface WorkerExpectation {
   operation: Operation;
   responseLimit: number;
+  correlation: string;
   request?: SeiRequest;
 }
 
@@ -42,6 +47,72 @@ export const WORKER_RESOURCE_LIMITS: Readonly<{
   codeRangeSizeMb: 16,
   stackSizeMb: 4,
 };
+
+export const WORKER_ADMISSION_LIMITS = Object.freeze({
+  max_concurrent: 4,
+  max_queued: 32,
+});
+
+interface AdmissionWaiter {
+  resolve: (release: () => void) => void;
+  reject: (error: SeiError) => void;
+  timer: ReturnType<typeof setTimeout>;
+}
+
+let activeWorkers = 0;
+const workerQueue: AdmissionWaiter[] = [];
+
+function releaseWorkerSlot(): void {
+  activeWorkers -= 1;
+  const next = workerQueue.shift();
+  if (next === undefined) return;
+  clearTimeout(next.timer);
+  activeWorkers += 1;
+  let released = false;
+  next.resolve(() => {
+    if (released) return;
+    released = true;
+    releaseWorkerSlot();
+  });
+}
+
+function acquireWorkerSlot(timeoutMs: number, timeoutCode: string): Promise<() => void> {
+  if (activeWorkers < WORKER_ADMISSION_LIMITS.max_concurrent) {
+    activeWorkers += 1;
+    let released = false;
+    return Promise.resolve(() => {
+      if (released) return;
+      released = true;
+      releaseWorkerSlot();
+    });
+  }
+  if (workerQueue.length >= WORKER_ADMISSION_LIMITS.max_queued) {
+    return Promise.reject(new SeiError(
+      "E_RESOURCE_LIMIT",
+      `Worker queue exceeds max_queued=${WORKER_ADMISSION_LIMITS.max_queued}.`,
+    ));
+  }
+  return new Promise((resolve, reject) => {
+    const waiter: AdmissionWaiter = {
+      resolve,
+      reject,
+      timer: setTimeout(() => {
+        const index = workerQueue.indexOf(waiter);
+        if (index >= 0) workerQueue.splice(index, 1);
+        reject(new SeiError(
+          timeoutCode,
+          `The interpreter could not enter the bounded worker pool within ${timeoutMs}ms.`,
+        ));
+      }, timeoutMs),
+    };
+    workerQueue.push(waiter);
+  });
+}
+
+/** @internal Current counters for concurrency regression verification. */
+export function workerAdmissionState(): Readonly<{ active: number; queued: number }> {
+  return { active: activeWorkers, queued: workerQueue.length };
+}
 
 function requestOperation(value: unknown): Operation {
   if (typeof value === "object" && value !== null && Object.hasOwn(value, "op")) {
@@ -95,15 +166,17 @@ function requestedResponseLimit(value: unknown): number {
 function workerExpectation(value: unknown): WorkerExpectation {
   const operation = requestOperation(value);
   const responseLimit = requestedResponseLimit(value);
+  const correlation = requestCorrelationDigest(value);
   try {
     const request = parseRequest(value);
     return {
       operation,
       responseLimit: resolveLimits(request.limits).max_response_bytes,
+      correlation,
       request,
     };
   } catch {
-    return { operation, responseLimit };
+    return { operation, responseLimit, correlation };
   }
 }
 
@@ -137,64 +210,66 @@ function workerFailure(operation: Operation, error: unknown): SeiResult {
 function validateWorkerResult(
   value: unknown,
   expectation: WorkerExpectation,
-): asserts value is SeiResult {
-  enforceResponseBoundary(value, {
+): SeiResult {
+  const result = readWorkerResultEnvelope(value, expectation.correlation);
+  enforceResponseBoundary(result, {
     ...HARD_LIMITS,
     max_response_bytes: expectation.responseLimit,
   });
-  if (!validateResultSchema(value)) {
+  if (!validateResultSchema(result)) {
     throw new SeiError(
       "E_WORKER_PROTOCOL",
       "The isolated interpreter returned a result outside the published tagged-union contract.",
     );
   }
 
-  if (value.operation !== expectation.operation) {
+  if (result.operation !== expectation.operation) {
     throw new SeiError("E_WORKER_PROTOCOL", "Worker result operation does not match its request.");
   }
   const request = expectation.request;
-  if (request === undefined) return;
-  const failureFlag = (name: string): boolean => !value.ok && value.diagnostics.some(
+  if (request === undefined) return result;
+  const failureFlag = (name: string): boolean => !result.ok && result.diagnostics.some(
     (diagnostic) => diagnostic.details?.[name] === true,
   );
   if (
-    value.input !== request.expression &&
+    result.input !== request.expression &&
     !(
       failureFlag("input_truncated") &&
       request.expression.length > 64 &&
-      value.input === request.expression.slice(0, 64)
+      result.input === request.expression.slice(0, 64)
     )
   ) {
     throw new SeiError("E_WORKER_PROTOCOL", "Worker result input does not match its request.");
   }
   if (
     request.op !== "detect" &&
-    value.kind !== request.kind &&
-    !(failureFlag("kind_omitted") && value.kind === undefined && (request.kind?.length ?? 0) > 64)
+    result.kind !== request.kind &&
+    !(failureFlag("kind_omitted") && result.kind === undefined && (request.kind?.length ?? 0) > 64)
   ) {
     throw new SeiError("E_WORKER_PROTOCOL", "Worker result kind does not match its request.");
   }
   if (
     request.dialect !== undefined &&
-    value.dialect !== request.dialect &&
+    result.dialect !== request.dialect &&
     !(
       failureFlag("dialect_omitted") &&
-      value.dialect === undefined &&
+      result.dialect === undefined &&
       request.dialect.length > 64
     )
   ) {
     throw new SeiError("E_WORKER_PROTOCOL", "Worker result dialect does not match its request.");
   }
-  if (value.ok && request.op === "query" && value.query_name !== request.query?.name) {
+  if (result.ok && request.op === "query" && result.query_name !== request.query?.name) {
     throw new SeiError("E_WORKER_PROTOCOL", "Worker query tag does not match its request.");
   }
   if (
-    value.ok &&
+    result.ok &&
     request.op === "convert" &&
-    value.conversion_target !== request.convert?.target_representation
+    result.conversion_target !== request.convert?.target_representation
   ) {
     throw new SeiError("E_WORKER_PROTOCOL", "Worker conversion tag does not match its request.");
   }
+  return result;
 }
 
 export function interpretBounded(request: unknown): Promise<SeiResult> {
@@ -202,101 +277,118 @@ export function interpretBounded(request: unknown): Promise<SeiResult> {
 }
 
 /** @internal Exported for boundary verification; ordinary callers use interpretBounded. */
-export function interpretBoundedInWorker(
+export async function interpretBoundedInWorker(
   request: unknown,
   workerUrlOverride?: URL,
   batchDeadlineMs?: number,
 ): Promise<SeiResult> {
-  const expectation = workerExpectation(request);
-  const { operation } = expectation;
+  const operation = requestOperation(request);
   try {
     enforceRequestBoundary(request, HARD_LIMITS);
   } catch (error) {
     return Promise.resolve(boundedFailure(operation, error));
   }
+  const expectation = workerExpectation(request);
   const requestTimeoutMs = requestedTimeout(request);
-  const timeoutMs = batchDeadlineMs === undefined
+  const totalTimeoutMs = batchDeadlineMs === undefined
     ? requestTimeoutMs
     : Math.max(1, Math.min(requestTimeoutMs, batchDeadlineMs));
   const timeoutCode = batchDeadlineMs !== undefined && batchDeadlineMs <= requestTimeoutMs
     ? "E_BATCH_TIMEOUT"
     : "E_EXECUTION_TIMEOUT";
+  const admissionStartedAt = performance.now();
+  let release: () => void;
+  try {
+    release = await acquireWorkerSlot(totalTimeoutMs, timeoutCode);
+  } catch (error) {
+    return boundedFailure(operation, error);
+  }
+  const timeoutMs = Math.floor(totalTimeoutMs - (performance.now() - admissionStartedAt));
+  if (timeoutMs <= 0) {
+    release();
+    return boundedFailure(
+      operation,
+      new SeiError(timeoutCode, `The interpreter exceeded its total ${totalTimeoutMs}ms deadline.`),
+    );
+  }
   const workerUrl = workerUrlOverride ?? new URL(
       import.meta.url.endsWith(".ts") ? "./worker-source.mjs" : "./worker.js",
       import.meta.url,
     );
 
-  return new Promise((resolve) => {
-    let settled = false;
-    let worker: Worker;
-    try {
-      worker = new Worker(workerUrl, {
-        workerData: request,
-        resourceLimits: WORKER_RESOURCE_LIMITS,
-        execArgv: process.execArgv.filter((argument) => !argument.startsWith("--input-type")),
-      });
-    } catch (error) {
-      resolve(boundedFailure(operation, error));
-      return;
-    }
-    const timer = setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      void worker.terminate();
-      resolve(
-        boundedFailure(
-          operation,
-          new SeiError(
-            timeoutCode,
-            timeoutCode === "E_BATCH_TIMEOUT"
-              ? `The batch execution deadline expired after ${timeoutMs}ms and the active worker was terminated.`
-              : `The isolated interpreter exceeded max_execution_ms=${timeoutMs} and was terminated.`,
-          ),
-        ),
-      );
-    }, timeoutMs);
-
-    worker.once("message", (message: unknown) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      void worker.terminate();
+  try {
+    return await new Promise((resolve) => {
+      let settled = false;
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      let worker: Worker;
       try {
-        validateWorkerResult(message, expectation);
-        resolve(message);
+        worker = new Worker(workerUrl, {
+          workerData: request,
+          resourceLimits: WORKER_RESOURCE_LIMITS,
+          execArgv: process.execArgv.filter((argument) => !argument.startsWith("--input-type")),
+        });
       } catch (error) {
         resolve(boundedFailure(operation, error));
+        return;
       }
-    });
-    worker.once("error", (error) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      void worker.terminate();
-      resolve(workerFailure(operation, error));
-    });
-    worker.once("messageerror", (error) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      void worker.terminate();
-      resolve(boundedFailure(operation, error));
-    });
-    worker.once("exit", (exitCode) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      resolve(
-        boundedFailure(
-          operation,
-          new SeiError(
-            "E_WORKER_EXIT",
-            `The isolated interpreter exited unexpectedly with code ${exitCode}.`,
+      const finish = (result: SeiResult, terminate: boolean): void => {
+        if (settled) return;
+        settled = true;
+        if (timer !== undefined) clearTimeout(timer);
+        if (!terminate) {
+          resolve(result);
+          return;
+        }
+        void worker.terminate().then(
+          () => resolve(result),
+          () => resolve(result),
+        );
+      };
+      timer = setTimeout(() => {
+        finish(
+          boundedFailure(
+            operation,
+            new SeiError(
+              timeoutCode,
+              timeoutCode === "E_BATCH_TIMEOUT"
+                ? `The batch execution deadline expired after ${timeoutMs}ms and the active worker was terminated.`
+                : `The isolated interpreter exceeded its remaining ${timeoutMs}ms execution budget and was terminated.`,
+            ),
           ),
-        ),
-      );
+          true,
+        );
+      }, timeoutMs);
+
+      worker.once("message", (message: unknown) => {
+        if (settled) return;
+        try {
+          finish(validateWorkerResult(message, expectation), true);
+        } catch (error) {
+          finish(boundedFailure(operation, error), true);
+        }
+      });
+      worker.once("error", (error) => {
+        finish(workerFailure(operation, error), true);
+      });
+      worker.once("messageerror", (error) => {
+        finish(boundedFailure(operation, error), true);
+      });
+      worker.once("exit", (exitCode) => {
+        finish(
+          boundedFailure(
+            operation,
+            new SeiError(
+              "E_WORKER_EXIT",
+              `The isolated interpreter exited unexpectedly with code ${exitCode}.`,
+            ),
+          ),
+          false,
+        );
+      });
     });
-  });
+  } finally {
+    release();
+  }
 }
 
 export async function interpretBatchBounded(

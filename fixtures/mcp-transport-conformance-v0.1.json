@@ -1,0 +1,158 @@
+{
+  "schema_version": "sei.mcp-transport-conformance.v0.1",
+  "tasks": [
+    {
+      "id": "cron-next-workday",
+      "user_task": "从 2026-08-14 00:00 UTC 起，这个 GitHub Actions Cron 接下来两次什么时候运行：0 9 * * 1-5？",
+      "tool": "sei_run",
+      "request": {
+        "op": "query",
+        "kind": "cron",
+        "dialect": "github-actions",
+        "expression": "0 9 * * 1-5",
+        "context": {
+          "timezone": "UTC",
+          "reference_time": "2026-08-14T00:00:00Z"
+        },
+        "query": {
+          "name": "next_occurrences",
+          "arguments": { "count": 2 }
+        }
+      },
+      "expected": {
+        "ok": true,
+        "operation": "query",
+        "kind": "cron",
+        "dialect": "github-actions",
+        "query_name": "next_occurrences",
+        "query_result": [
+          { "instant": "2026-08-14T09:00:00.000Z", "timezone": "UTC" },
+          { "instant": "2026-08-17T09:00:00.000Z", "timezone": "UTC" }
+        ]
+      }
+    },
+    {
+      "id": "semver-range-match",
+      "user_task": "版本 3.7.4 是否满足 npm 范围 ^3.2.0？",
+      "tool": "sei_run",
+      "request": {
+        "op": "query",
+        "kind": "semver_range",
+        "dialect": "npm",
+        "expression": "^3.2.0",
+        "query": {
+          "name": "matches",
+          "arguments": { "candidate": "3.7.4" }
+        }
+      },
+      "expected": {
+        "ok": true,
+        "operation": "query",
+        "kind": "semver_range",
+        "query_name": "matches",
+        "query_result": { "candidate": "3.7.4", "matches": true }
+      }
+    },
+    {
+      "id": "cidr-contains-address",
+      "user_task": "192.168.1.42 是否属于 192.168.1.0/24？",
+      "tool": "sei_run",
+      "request": {
+        "op": "query",
+        "kind": "cidr",
+        "expression": "192.168.1.0/24",
+        "query": {
+          "name": "contains",
+          "arguments": { "address": "192.168.1.42" }
+        }
+      },
+      "expected": {
+        "ok": true,
+        "operation": "query",
+        "kind": "cidr",
+        "query_name": "contains",
+        "query_result": { "address": "192.168.1.42", "contains": true }
+      }
+    },
+    {
+      "id": "uri-resolve-reference",
+      "user_task": "把相对引用 ../c?x=1 按 RFC 3986 解析到 https://example.com/a/b/ 上。",
+      "tool": "sei_run",
+      "request": {
+        "op": "query",
+        "kind": "uri",
+        "expression": "https://example.com/a/b/",
+        "query": {
+          "name": "resolve",
+          "arguments": { "reference": "../c?x=1" }
+        }
+      },
+      "expected": {
+        "ok": true,
+        "operation": "query",
+        "kind": "uri",
+        "query_name": "resolve",
+        "query_result": {
+          "reference": "../c?x=1",
+          "resolved": "https://example.com/a/c?x=1"
+        }
+      }
+    },
+    {
+      "id": "content-type-charset",
+      "user_task": "text/html; charset=utf-8 的 charset 参数是什么？",
+      "tool": "sei_run",
+      "request": {
+        "op": "query",
+        "kind": "content_type",
+        "expression": "text/html; charset=utf-8",
+        "query": {
+          "name": "parameter",
+          "arguments": { "name": "charset" }
+        }
+      },
+      "expected": {
+        "ok": true,
+        "operation": "query",
+        "kind": "content_type",
+        "query_name": "parameter",
+        "query_result": { "name": "charset", "present": true, "value": "utf-8" }
+      }
+    },
+    {
+      "id": "iso-duration-interpret",
+      "user_task": "精确拆解 ISO 8601 时长 P1DT3H。",
+      "tool": "sei_run",
+      "request": {
+        "op": "interpret",
+        "kind": "iso_duration",
+        "expression": "P1DT3H"
+      },
+      "expected": {
+        "ok": true,
+        "operation": "interpret",
+        "kind": "iso_duration",
+        "normalized": "P1DT3H",
+        "value": { "days": "1", "hours": "3" }
+      }
+    },
+    {
+      "id": "unix-permission-special-mode",
+      "user_task": "把 Unix 权限 4755 转成 symbolic，并保留 setuid 语义。",
+      "tool": "sei_run",
+      "request": {
+        "op": "convert",
+        "kind": "unix_permission",
+        "expression": "4755",
+        "convert": { "target_representation": "symbolic" }
+      },
+      "expected": {
+        "ok": true,
+        "operation": "convert",
+        "kind": "unix_permission",
+        "conversion_target": "symbolic",
+        "converted": { "representation": "symbolic", "expression": "rwsr-xr-x" }
+      }
+    }
+  ]
+}

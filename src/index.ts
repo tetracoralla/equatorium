@@ -54,6 +54,7 @@ export { interpretBatchBounded, interpretBounded } from "./core/bounded.js";
 export { BATCH_LIMITS } from "./core/batch.js";
 export { ExpressionRegistry } from "./core/registry.js";
 export { HARD_LIMITS, MINIMUM_LIMITS, RESPONSE_STRUCTURAL_LIMITS } from "./core/request.js";
-export { createRequestSchema } from "./schema/request-schema.js";
+export { createAgentRequestSchema, createRequestSchema } from "./schema/request-schema.js";
 export { createResultSchema } from "./schema/result-schema.js";
+export { standardJsonSchema } from "./schema/standard-json-schema.js";
 export { createDefaultRegistry, defaultRegistry } from "./default-registry.js";

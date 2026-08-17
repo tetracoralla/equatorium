@@ -17,6 +17,8 @@ import {
 import {
   interpretBatchBoundedInWorkers,
   interpretBoundedInWorker,
+  WORKER_ADMISSION_LIMITS,
+  workerAdmissionState,
 } from "../src/core/bounded.js";
 
 function expectFailure(result: SeiResult, code: string): void {
@@ -31,6 +33,25 @@ function expectSuccess(result: SeiResult): Extract<SeiResult, { ok: true }> {
 }
 
 describe("reviewer regressions: semantic preservation", () => {
+  it.each(["*", "x", "*.*.*", ">=0.0.0"])(
+    "serializes npm any-range %s without an undefined comparator",
+    async (expression) => {
+      const direct = expectSuccess(
+        interpret({ op: "interpret", kind: "semver_range", expression }, defaultRegistry),
+      );
+      expect(direct.normalized).toBe("*");
+      expect(direct.value).toEqual({ comparator_sets: [[]] });
+
+      const bounded = await interpretBounded({
+        op: "normalize",
+        kind: "semver_range",
+        expression,
+      });
+      expectSuccess(bounded);
+      expect(bounded.normalized).toBe("*");
+    },
+  );
+
   it.each(["0127.0.0.1/8", "2130706433/8"])(
     "rejects non-decimal-four-part IPv4 CIDR %s",
     (expression) => {
@@ -294,7 +315,7 @@ describe("reviewer regressions: strict platform and URI semantics", () => {
   });
 
   it.each(["http://[invalid", "https://exa mple.com", "https://example.com/%ZZ"])(
-    "rejects an invalid RFC 3986 absolute URI: %s",
+    "rejects an invalid scheme-qualified RFC 3986 URI: %s",
     (expression) => {
       expectFailure(
         interpret({ op: "interpret", kind: "uri", expression }, defaultRegistry),
@@ -355,6 +376,52 @@ describe("reviewer regressions: strict platform and URI semantics", () => {
       interpret({ op: "detect", expression: "hello world this is cron" }, defaultRegistry),
     );
     expect(result.candidates).toEqual([]);
+  });
+
+  it("detects Cron without silently choosing a platform dialect", () => {
+    const result = expectSuccess(
+      interpret({ op: "detect", expression: "1,3 * * * *" }, defaultRegistry),
+    );
+    expect(result.candidates).toContainEqual(expect.objectContaining({
+      kind: "cron",
+      supported: true,
+    }));
+    expect(result.candidates?.find((candidate) => candidate.kind === "cron")?.dialect)
+      .toBeUndefined();
+  });
+
+  it.each([
+    ["cidr", " 192.168.1.0/24 "],
+    ["iso_duration", " P1D "],
+    ["uri", " https://example.com/a "],
+  ])("does not report padded %s input as executable", (kind, expression) => {
+    const result = expectSuccess(interpret({ op: "detect", expression }, defaultRegistry));
+    expect(result.candidates?.some((candidate) => candidate.kind === kind && candidate.supported))
+      .toBe(false);
+  });
+
+  it("detects every padded Content-Type expression accepted by interpretation", () => {
+    const expression = " text/plain; charset=utf-8 ";
+    const detected = expectSuccess(interpret({ op: "detect", expression }, defaultRegistry));
+    expect(detected.candidates).toContainEqual(expect.objectContaining({
+      kind: "content_type",
+      dialect: "http",
+      supported: true,
+    }));
+    const interpreted = expectSuccess(interpret({
+      op: "interpret",
+      kind: "content_type",
+      dialect: "http",
+      expression,
+    }, defaultRegistry));
+    expect(interpreted.normalized).toBe("text/plain; charset=utf-8");
+  });
+
+  it("uses scheme-required terminology for URI input without a scheme", () => {
+    expectFailure(
+      interpret({ op: "interpret", kind: "uri", expression: "//example.com/path#frag" }, defaultRegistry),
+      "E_URI_SCHEME_REQUIRED",
+    );
   });
 
   it("applies max_output_items to ambiguous detection candidates", () => {
@@ -594,6 +661,58 @@ describe("reviewer regressions: discoverability and resource boundaries", () => 
     expect(result.input.length).toBeLessThanOrEqual(128);
   });
 
+  it("preserves a bounded response-limit diagnostic across the worker boundary", async () => {
+    const result = await interpretBounded({
+      op: "interpret",
+      kind: "uri",
+      expression: `https://example.com/${"a".repeat(900)}`,
+      limits: { max_response_bytes: 1_024 },
+    });
+    expectFailure(result, "E_RESPONSE_LIMIT");
+    expect(result.kind).toBe("uri");
+    expect(Buffer.byteLength(JSON.stringify(result), "utf8")).toBeLessThanOrEqual(1_024);
+  });
+
+  it("applies max_output_items to adapter-generated collections", () => {
+    expectFailure(
+      interpret(
+        {
+          op: "interpret",
+          kind: "content_type",
+          expression: "text/plain; a=1; b=2",
+          limits: { max_output_items: 1 },
+        },
+        defaultRegistry,
+      ),
+      "E_RESOURCE_LIMIT",
+    );
+    expectFailure(
+      interpret(
+        {
+          op: "interpret",
+          kind: "semver_range",
+          expression: ">=1.0.0 <2.0.0",
+          limits: { max_output_items: 1 },
+        },
+        defaultRegistry,
+      ),
+      "E_RESOURCE_LIMIT",
+    );
+    expectFailure(
+      interpret(
+        {
+          op: "interpret",
+          kind: "cron",
+          dialect: "unix-5",
+          expression: "1,3 * * * *",
+          limits: { max_output_items: 1 },
+        },
+        defaultRegistry,
+      ),
+      "E_RESOURCE_LIMIT",
+    );
+  });
+
   it("preserves the original failure code when only echoed input exceeds the response limit", () => {
     const result = interpret(
       {
@@ -677,6 +796,31 @@ describe("reviewer regressions: discoverability and resource boundaries", () => 
       limits: { max_execution_ms: 10 },
     });
     expectFailure(result, "E_EXECUTION_TIMEOUT");
+  });
+
+  it("admits at most the bounded number of workers concurrently", async () => {
+    const request = {
+      op: "interpret",
+      kind: "semver_range",
+      expression: "^1.0.0",
+      limits: { max_execution_ms: 1_000 },
+    };
+    const pending = Array.from(
+      { length: WORKER_ADMISSION_LIMITS.max_concurrent * 2 },
+      () => interpretBoundedInWorker(
+        request,
+        new URL("./fixtures/delayed-success-worker.mjs", import.meta.url),
+      ),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    expect(workerAdmissionState()).toEqual({
+      active: WORKER_ADMISSION_LIMITS.max_concurrent,
+      queued: WORKER_ADMISSION_LIMITS.max_concurrent,
+    });
+
+    const results = await Promise.all(pending);
+    expect(results.every((result) => result.ok)).toBe(true);
+    expect(workerAdmissionState()).toEqual({ active: 0, queued: 0 });
   });
 
   it("enforces one cumulative deadline across a bounded batch", async () => {
@@ -805,6 +949,69 @@ describe("reviewer regressions: discoverability and resource boundaries", () => 
       limits: { max_response_bytes: 1_024 },
     });
     expectFailure(longKind, "E_KIND_UNKNOWN");
+  });
+
+  it("rejects a compacted result from a different request with the same visible prefix", async () => {
+    const result = await interpretBoundedInWorker(
+      {
+        op: "interpret",
+        kind: "uri",
+        expression: `${"x".repeat(64)}-request-a`,
+        limits: { max_response_bytes: 1_024 },
+      },
+      new URL("./fixtures/mismatched-compacted-worker.mjs", import.meta.url),
+    );
+    expectFailure(result, "E_WORKER_PROTOCOL");
+  });
+
+  it.each([
+    {
+      op: "query",
+      kind: "semver_range",
+      expression: "^1",
+      query: { name: "matches", arguments: { candidate: "1.2.3" } },
+    },
+    {
+      op: "convert",
+      kind: "unix_permission",
+      expression: "755",
+      convert: { target_representation: "symbolic" },
+    },
+  ] as const)("rejects an ordinary failure correlated to another $op request", async (request) => {
+    const result = await interpretBoundedInWorker(
+      request,
+      new URL("./fixtures/mismatched-failure-correlation-worker.mjs", import.meta.url),
+    );
+    expectFailure(result, "E_WORKER_PROTOCOL");
+  });
+
+  it.each([
+    {
+      label: "query arguments",
+      request: {
+        op: "query",
+        kind: "semver_range",
+        expression: "^1",
+        query: { name: "intersects", arguments: { range: ">=9.0.0" } },
+      },
+    },
+    {
+      label: "time context",
+      request: {
+        op: "query",
+        kind: "cron",
+        dialect: "unix-5",
+        expression: "0 9 * * *",
+        context: { timezone: "UTC", reference_time: "2026-08-14T00:00:00Z" },
+        query: { name: "next_occurrences", arguments: { count: 1 } },
+      },
+    },
+  ] as const)("rejects a worker result correlated to different $label", async ({ request }) => {
+    const result = await interpretBoundedInWorker(
+      request,
+      new URL("./fixtures/mismatched-full-request-correlation-worker.mjs", import.meta.url),
+    );
+    expectFailure(result, "E_WORKER_PROTOCOL");
   });
 
   it("preserves adapter diagnostic codes through the source worker", async () => {

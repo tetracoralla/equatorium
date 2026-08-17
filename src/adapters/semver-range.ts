@@ -131,15 +131,27 @@ export class SemverRangeAdapter implements ExpressionAdapter {
       );
     }
     const normalized = range.range.length === 0 ? "*" : range.range;
+    const comparatorSets = range.set.map((set) =>
+      set
+        .filter((comparator) => comparator.value !== "")
+        .map((comparator) => ({
+          operator: comparator.operator || "=",
+          version: comparator.semver.version,
+        })),
+    );
+    if (
+      comparatorSets.length > input.limits.max_output_items ||
+      comparatorSets.some((set) => set.length > input.limits.max_output_items)
+    ) {
+      throw new SeiError(
+        "E_RESOURCE_LIMIT",
+        `SemVer comparator output exceeds max_output_items=${input.limits.max_output_items}.`,
+      );
+    }
     return {
       normalized,
       value: {
-        comparator_sets: range.set.map((set) =>
-          set.map((comparator) => ({
-            operator: comparator.operator || "=",
-            version: comparator.semver.version,
-          })),
-        ),
+        comparator_sets: comparatorSets,
       },
       state: { range } satisfies SemverState,
     };
@@ -200,7 +212,7 @@ export class SemverRangeAdapter implements ExpressionAdapter {
   }
 
   detect(expression: string): DetectionCandidate | null {
-    const value = expression.trim();
+    const value = expression;
     const rangeShape = /[~^*xX<>=|]/.test(value) || /^v?\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(value);
     if (!rangeShape) return null;
     try {

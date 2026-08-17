@@ -5,6 +5,11 @@ if (parentPort === null) {
   throw new Error("SEI source worker must run inside a worker thread.");
 }
 
-const { defaultRegistry, interpret } = await tsImport("./worker-entry.ts", import.meta.url);
+const { createWorkerResultEnvelope, defaultRegistry, interpret } = await tsImport(
+  "./worker-entry.ts",
+  import.meta.url,
+);
 
-parentPort.postMessage(interpret(workerData, defaultRegistry));
+parentPort.postMessage(
+  createWorkerResultEnvelope(workerData, interpret(workerData, defaultRegistry)),
+);

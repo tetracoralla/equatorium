@@ -137,6 +137,12 @@ export class ContentTypeAdapter implements ExpressionAdapter {
         .map(([name, value]) => [name.toLowerCase(), value] as const)
         .sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0),
     );
+    if (Object.keys(parameters).length > input.limits.max_output_items) {
+      throw new SeiError(
+        "E_RESOURCE_LIMIT",
+        `Content-Type parameter output exceeds max_output_items=${input.limits.max_output_items}.`,
+      );
+    }
     const slash = mediaType.indexOf("/");
     const subtype = mediaType.slice(slash + 1);
     const suffixIndex = subtype.lastIndexOf("+");
@@ -190,12 +196,12 @@ export class ContentTypeAdapter implements ExpressionAdapter {
   }
 
   detect(expression: string): DetectionCandidate | null {
-    if (!/^\s*[!#$%&'*+.^_`|~0-9A-Za-z-]+\/[!#$%&'*+.^_`|~0-9A-Za-z-]+/.test(expression)) {
-      return null;
-    }
     try {
-      assertUniqueParameters(expression.trim());
-      parse(expression.trim());
+      assertUniqueParameters(expression);
+      const parsed = parse(expression);
+      if (!/^[!#$%&'*+.^_`|~0-9A-Za-z-]+\/[!#$%&'*+.^_`|~0-9A-Za-z-]+$/.test(parsed.type)) {
+        return null;
+      }
       return {
         kind: "content_type",
         dialect: "http",
