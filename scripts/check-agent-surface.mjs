@@ -39,6 +39,12 @@ const serverConfig = mcp.mcpServers?.equatorium;
 assert.equal(packageJson.name, "@openadam/equatorium");
 assert.equal(packageJson.author?.name, "openAdam");
 assert.equal(packageJson.license, "Apache-2.0");
+assert.deepEqual(packageJson.repository, {
+  type: "git",
+  url: "https://github.com/tetracoralla/equatorium.git",
+});
+assert.equal(packageJson.bugs?.url, "https://github.com/tetracoralla/equatorium/issues");
+assert.equal(packageJson.homepage, "https://github.com/tetracoralla/equatorium#readme");
 assert.equal(packageJson.bin?.equatorium, "./dist/cli.js");
 assert.equal(packageJson.bin?.["equatorium-mcp"], "./dist/mcp-bin.js");
 assert.equal(packageJson.bin?.["equatorium-ui"], "./dist/ui-bin.js");

@@ -8,6 +8,14 @@
     "url": "https://github.com/tetracoralla"
   },
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tetracoralla/equatorium.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tetracoralla/equatorium/issues"
+  },
+  "homepage": "https://github.com/tetracoralla/equatorium#readme",
   "type": "module",
   "bin": {
     "equatorium": "./dist/cli.js",

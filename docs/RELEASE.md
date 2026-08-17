@@ -1,8 +1,10 @@
 # Equatorium release path
 
-The source is licensed under Apache-2.0 with openAdam as the named copyright
-holder. The package remains `private: true` because the current publication
-scope is a public GitHub source repository, not npm registry publication.
+The canonical source is published at
+<https://github.com/tetracoralla/equatorium> under Apache-2.0, with openAdam as
+the named copyright holder. The package remains `private: true` because the
+current publication scope is a public GitHub source repository, not npm
+registry publication.
 
 ## Technical release gate
 
@@ -21,10 +23,13 @@ Before announcing Agent availability, install the built `plugins/equatorium` bun
 - one Chinese natural-language task per supported adapter routes to one bounded `sei_run` call;
 - invalid or ambiguous input does not fall back to model interpretation.
 
-## Remaining owner and hosting steps
+## Publication boundaries
 
-1. Choose the GitHub owner/repository slug. Then add `repository`, `bugs`, and `homepage` package metadata and configure the Git remote.
-2. Create the public GitHub repository and enable private vulnerability reporting before public announcement.
-3. Remove `private: true` only if npm publication is separately selected and validated.
+- Keep GitHub private vulnerability reporting enabled.
+- Remove `private: true` only if npm publication is separately selected and
+  validated.
+- Treat npm and universal plugin-directory publication as separate release
+  decisions with their own checks.
 
-No npm or universal plugin-directory publication is implied by a public source push.
+The public source repository does not imply npm or universal plugin-directory
+publication.
