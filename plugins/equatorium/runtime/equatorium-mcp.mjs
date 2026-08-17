@@ -44177,7 +44177,7 @@ function toolSummary(value) {
   }
   if (value.operation === "detect") {
     const candidates = value.candidates ?? [];
-    return `Equatorium detection is complete but deliberately unresolved. Use an explicitly named platform or dialect to choose among: ${JSON.stringify(candidates)}. If the user did not name one, present the choices and ask; never assume Unix.`.slice(0, 1536);
+    return `Equatorium detect is unresolved: ${JSON.stringify(candidates)}. Ask which platform applies; never assume Unix.`.slice(0, 768);
   }
   const record2 = value;
   const details = Object.fromEntries([
@@ -44192,27 +44192,26 @@ function toolSummary(value) {
   ].flatMap((key) => record2[key] === void 0 ? [] : [[key, record2[key]]]));
   const serialized = JSON.stringify(details);
   const boundedDetails = Buffer.byteLength(serialized, "utf8") <= 1200 ? serialized : JSON.stringify({ normalized: record2.normalized });
-  return `Final deterministic Equatorium result for ${value.kind ?? "the expression"}. Answer directly from this result; do not call Equatorium again or add web research unless the user explicitly requested external research. Use the returned normalized value exactly for any requested canonical or \u89C4\u8303\u5199\u6CD5 form; do not drop returned fields or parameters. \u4E2D\u6587\u4EFB\u52A1\u4E2D\uFF0C\u201C\u89C4\u8303\u5199\u6CD5\u201D\u5C31\u662F normalized \u7684\u539F\u6837\u503C\uFF0C\u4E0D\u5F97\u53E6\u7ED9\u5220\u9664\u53C2\u6570\u540E\u7684\u201C\u66F4\u63A8\u8350\u5199\u6CD5\u201D\u3002 ${boundedDetails}`;
+  return `Equatorium ${value.operation} result: ${boundedDetails}`;
 }
 function toolResult(value) {
   return {
     content: [{ type: "text", text: toolSummary(value) }],
-    structuredContent: { ...value },
-    ...!value.ok ? { isError: true } : {}
+    structuredContent: { ...value }
   };
 }
 function createSeiMcpServer() {
   const server = new McpServer(
     { name: "equatorium", version: "0.1.0" },
     {
-      instructions: "Always call the single sei_run tool exactly once for every concrete supported expression; never answer from memory. This includes Chinese requests such as \u89E3\u91CA Unix \u6743\u9650\u6A21\u5F0F 4755, \u89E3\u91CA Content-Type, \u89E3\u91CA URI, and \u89E3\u91CA P1DT2H30M. For Cron without an explicit platform or dialect, make that one call with op detect and omit kind/dialect; never assume Unix. Its schema already contains every supported kind, dialect, query, and conversion. Make one operation-specific request and omit unrelated fields. One successful result is final: answer from it without discovery, repeated calls, or web research unless explicitly requested."
+      instructions: "Call sei_run exactly once for every concrete supported expression, including Chinese requests; never answer from memory. For Cron without a platform, use op detect, omit kind/dialect, and never assume Unix. Make one operation-specific request, omit unrelated fields, and treat its structured result as final."
     }
   );
   server.registerTool(
     "sei_run",
     {
       title: "Interpret Cron, SemVer, CIDR, URI, Content-Type, ISO duration, or Unix permission",
-      description: "The only Equatorium tool. MUST call exactly once instead of using model memory for any concrete Cron, npm SemVer range, CIDR, URI, HTTP Content-Type, ISO 8601 duration, or Unix permission evaluation\u2014including Chinese requests like \u89E3\u91CA Unix \u6743\u9650\u6A21\u5F0F 4755. For Cron without an explicit platform or dialect, use op detect and omit kind/dialect; never assume Unix. Its schema fully describes every supported kind and operation. Choose one op and omit unrelated fields. Query shape: query: { name, arguments }; npm membership uses arguments.candidate. A successful structured result is final\u2014answer directly without repeated calls or web research unless explicitly requested.",
+      description: "The only Equatorium tool. MUST call exactly once instead of using model memory for any concrete Cron, npm SemVer range, CIDR, URI, HTTP Content-Type, ISO 8601 duration, or Unix permission evaluation\u2014including Chinese requests like \u89E3\u91CA Unix \u6743\u9650\u6A21\u5F0F 4755. For Cron without an explicit platform or dialect, use op detect and omit kind/dialect; never assume Unix. Exact non-Cron pairs: semver_range/npm, cidr/cidr, uri/rfc3986, content_type/http, iso_duration/iso8601-1, unix_permission/posix-mode. Choose one op and omit unrelated fields. Query shape: query: { name, arguments }; npm membership uses arguments.candidate. A completed structured result is final\u2014answer directly without repeated calls or web research unless explicitly requested.",
       inputSchema: requestSchema,
       annotations: {
         readOnlyHint: true,

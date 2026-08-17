@@ -71,7 +71,7 @@ button { cursor: pointer; }
 .panel {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  padding: 30px;
+  padding: 26px;
   background: var(--surface);
   box-shadow: var(--shadow);
 }
@@ -91,7 +91,7 @@ h3 { margin-bottom: 12px; font-size: 14px; }
   font-family: var(--mono);
   line-height: 1.55;
 }
-.expression-field textarea { min-height: 94px; padding: 16px; font-size: 16px; }
+.expression-field textarea { min-height: 82px; padding: 14px 15px; font-size: 16px; }
 
 textarea:focus-visible,
 button:focus-visible,
@@ -171,12 +171,10 @@ summary:focus-visible {
 }
 .normalized code { overflow-wrap: anywhere; font-family: var(--mono); font-size: 14px; }
 
-.data-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.data-item { min-width: 0; border: 1px solid var(--line); border-radius: 11px; padding: 11px 12px; background: var(--surface-strong); }
-.data-key { display: block; margin-bottom: 5px; color: var(--muted); font-size: 11px; }
-.data-value { display: block; overflow-wrap: anywhere; font-size: 13px; line-height: 1.45; }
-.data-value.mono { font-family: var(--mono); font-size: 12px; }
-.data-item.wide { grid-column: 1 / -1; }
+.data-list { margin: 0; border-top: 1px solid var(--line); }
+.data-row { display: grid; grid-template-columns: minmax(115px, 0.36fr) minmax(0, 1fr); gap: 18px; border-bottom: 1px solid var(--line); padding: 10px 2px; }
+.data-key { color: var(--muted); font-size: 11px; }
+.data-value { margin: 0; overflow-wrap: anywhere; font-size: 13px; line-height: 1.45; }
 
 .ambiguity p, .unrecognized { color: var(--muted); font-size: 13px; }
 .ambiguity-actions { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -194,8 +192,7 @@ summary:focus-visible {
   .panel { padding: 23px 20px; border-radius: 17px; }
   .form-actions { align-items: stretch; flex-direction: column; }
   .primary-action { width: 100%; }
-  .data-grid { grid-template-columns: 1fr; }
-  .data-item.wide { grid-column: auto; }
+  .data-row { grid-template-columns: minmax(92px, 0.34fr) minmax(0, 1fr); gap: 12px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

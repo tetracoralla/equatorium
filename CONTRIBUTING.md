@@ -23,3 +23,9 @@ npm run check
 - Keep `sei_run` as the complete public MCP tool surface unless a protocol version explicitly changes that contract.
 
 Before proposing a new expression kind, dogfood it against concrete Agent tasks and document the unmet task that the adapter resolves.
+
+## Contribution license
+
+Unless explicitly stated otherwise, contributions submitted for inclusion in
+Equatorium are licensed under the Apache License 2.0, consistent with the
+repository's [LICENSE](LICENSE).

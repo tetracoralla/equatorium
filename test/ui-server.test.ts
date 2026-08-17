@@ -23,7 +23,8 @@ describe("local human interface", () => {
     const html = await response.text();
     expect(html).toContain('id="expression"');
     expect(html).toContain('id="submit-button"');
-    expect(html).toContain('id="result-area" hidden');
+    expect(html).toMatch(/<button[^>]*id="submit-button"[^>]*\sdisabled[\s>]/);
+    expect(html).toMatch(/<section[^>]*id="result-area"[^>]*hidden>/);
     expect(html).not.toContain("Equatorium 会识别它");
     expect(html).not.toContain("仅在本机运行");
     expect(html).not.toContain("等待输入");

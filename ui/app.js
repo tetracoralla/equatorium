@@ -1,4 +1,4 @@
-import { EXAMPLES, KIND_LABELS } from "./catalog.js";
+import { DIALECT_LABELS, EXAMPLES, KIND_LABELS } from "./catalog.js";
 import { element, renderPayload } from "./result-view.js";
 import { createRequestLifecycle } from "./request-lifecycle.js";
 
@@ -19,6 +19,7 @@ const resultRefs = {
 };
 
 let descriptors = [];
+let registryReady = false;
 const requestLifecycle = createRequestLifecycle();
 
 function showError(target, message) {
@@ -36,6 +37,7 @@ async function evaluate(request, run) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ request }),
+    signal: run.signal,
   });
   const payload = await response.json();
   if (!response.ok) throw new Error(payload.error ?? "运行失败。");
@@ -76,15 +78,12 @@ function showAmbiguity(run, candidates, includesUnsupported = false) {
   resultArea.hidden = false;
   resultHeading.hidden = false;
   resultContent.hidden = false;
-  resultTitle.textContent = "请确认表达式类型";
+  const cronOnly = candidates.length > 1 && candidates.every((candidate) => candidate.kind === "cron");
+  resultTitle.textContent = cronOnly ? "选择运行平台" : "选择解释方式";
   const chooser = element("div", "ambiguity");
-  chooser.append(element(
-    "p",
-    "",
-    includesUnsupported
-      ? "它也可能是暂不支持的普通值。请确认你想表达的类型："
-      : "请选择你想表达的类型：",
-  ));
+  if (includesUnsupported) {
+    chooser.append(element("p", "", "它也可能只是普通数字。"));
+  }
   const actions = element("div", "ambiguity-actions");
   const kindCounts = new Map();
   for (const candidate of candidates) {
@@ -92,9 +91,11 @@ function showAmbiguity(run, candidates, includesUnsupported = false) {
   }
   for (const candidate of candidates) {
     const kindLabel = KIND_LABELS[candidate.kind] ?? candidate.kind;
-    const label = kindCounts.get(candidate.kind) > 1 && candidate.dialect
-      ? `${kindLabel}（${candidate.dialect}）`
-      : kindLabel;
+    const label = candidate.dialect !== undefined && DIALECT_LABELS[candidate.dialect] !== undefined
+      ? DIALECT_LABELS[candidate.dialect]
+      : kindCounts.get(candidate.kind) > 1 && candidate.dialect
+        ? `${kindLabel}（${candidate.dialect}）`
+        : kindLabel;
     const button = element("button", "ambiguity-button", label);
     button.type = "button";
     button.addEventListener("click", async () => {
@@ -107,6 +108,7 @@ function showAmbiguity(run, candidates, includesUnsupported = false) {
           showError(formError, error.message);
         }
       } finally {
+        requestLifecycle.finish(choiceRun, expressionInput.value);
         button.disabled = false;
       }
     });
@@ -180,29 +182,42 @@ form.addEventListener("submit", async (event) => {
       showError(formError, error.message);
     }
   } finally {
-    submitButton.disabled = false;
-    submitButton.querySelector("span").textContent = "解释";
+    if (requestLifecycle.finish(run, expressionInput.value)) {
+      submitButton.disabled = false;
+      submitButton.querySelector("span").textContent = "解释";
+    }
   }
 });
 
 expressionInput.addEventListener("input", () => {
   requestLifecycle.invalidate();
+  if (registryReady) clearError(formError);
+  submitButton.disabled = !registryReady;
+  submitButton.querySelector("span").textContent = "解释";
   resetResult();
 });
 for (const button of document.querySelectorAll("[data-example]")) {
   button.addEventListener("click", () => {
     requestLifecycle.invalidate();
+    if (registryReady) clearError(formError);
+    submitButton.disabled = !registryReady;
+    submitButton.querySelector("span").textContent = "解释";
     expressionInput.value = EXAMPLES[button.dataset.example].expression;
     resetResult();
     expressionInput.focus();
   });
 }
 
+const REGISTRY_UNAVAILABLE = "无法读取表达式目录，请刷新页面重试。";
+
 try {
   const response = await fetch("/api/registry");
-  if (!response.ok) throw new Error("无法读取表达式目录。");
-  descriptors = (await response.json()).adapters;
-} catch (error) {
-  showError(formError, error.message);
-  submitButton.disabled = true;
+  if (!response.ok) throw new Error(REGISTRY_UNAVAILABLE);
+  const body = await response.json().catch(() => null);
+  if (!Array.isArray(body?.adapters)) throw new Error(REGISTRY_UNAVAILABLE);
+  descriptors = body.adapters;
+  registryReady = true;
+  submitButton.disabled = false;
+} catch {
+  showError(formError, REGISTRY_UNAVAILABLE);
 }

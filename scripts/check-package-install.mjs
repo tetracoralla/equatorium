@@ -71,6 +71,8 @@ try {
   assert(packedFiles.has("dist/mcp-bin.js"));
   assert(packedFiles.has("dist/ui-bin.js"));
   assert(packedFiles.has("ui/index.html"));
+  assert(packedFiles.has("LICENSE"));
+  assert(packedFiles.has("NOTICE"));
   assert(packedFiles.has("THIRD_PARTY_NOTICES.md"));
   assert(
     ![...packedFiles].some((path) => path.startsWith("dist/core/correlation.")),
@@ -95,6 +97,8 @@ try {
 
   const installedPackage = resolve(consumerRoot, "node_modules", "@openadam", "equatorium");
   const packageJson = JSON.parse(await readFile(resolve(installedPackage, "package.json"), "utf8"));
+  assert.equal(packageJson.author?.name, "openAdam");
+  assert.equal(packageJson.license, "Apache-2.0");
   assert.equal(packageJson.bin["equatorium-mcp"], "./dist/mcp-bin.js");
   assert.equal(packageJson.bin["sei-mcp"], "./dist/mcp-bin.js");
 

@@ -1,16 +1,28 @@
 export function createRequestLifecycle() {
   let generation = 0;
+  let controller;
+
+  function isCurrent(run, expression) {
+    return run.generation === generation && run.expression === expression;
+  }
 
   return {
     begin(expression) {
+      controller?.abort();
       generation += 1;
-      return Object.freeze({ generation, expression });
+      controller = new AbortController();
+      return Object.freeze({ generation, expression, signal: controller.signal });
     },
     invalidate() {
       generation += 1;
+      controller?.abort();
+      controller = undefined;
     },
-    isCurrent(run, expression) {
-      return run.generation === generation && run.expression === expression;
+    finish(run, expression) {
+      if (!isCurrent(run, expression)) return false;
+      controller = undefined;
+      return true;
     },
+    isCurrent,
   };
 }

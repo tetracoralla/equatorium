@@ -37,20 +37,20 @@
               <button type="button" data-example="cidr">CIDR</button>
               <button type="button" data-example="permission">4755</button>
             </div>
-            <button class="primary-action" id="submit-button" type="submit">
+            <button class="primary-action" id="submit-button" type="submit" disabled>
               <span>解释</span>
             </button>
           </div>
           <p class="form-error" id="form-error" role="alert" hidden></p>
         </form>
 
-        <section class="result-area" id="result-area" hidden>
+        <section class="result-area" id="result-area" aria-live="polite" hidden>
           <div class="result-heading" id="result-heading" hidden>
             <div>
               <h2 id="result-title"></h2>
             </div>
           </div>
-          <div id="result-content" hidden aria-live="polite"></div>
+          <div id="result-content" hidden></div>
         </section>
       </section>
     </main>

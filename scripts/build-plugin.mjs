@@ -1,5 +1,5 @@
 import "./set-cli-mode.mjs";
-import { chmod, mkdir, readFile } from "node:fs/promises";
+import { chmod, copyFile, mkdir, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 import { writeThirdPartyNotices } from "./generate-third-party-notices.mjs";
@@ -61,5 +61,16 @@ await writeThirdPartyNotices({
     fileURLToPath(new URL("../plugins/equatorium/THIRD_PARTY_NOTICES.md", import.meta.url)),
   ],
 });
+
+await Promise.all([
+  copyFile(
+    new URL("../LICENSE", import.meta.url),
+    new URL("../plugins/equatorium/LICENSE", import.meta.url),
+  ),
+  copyFile(
+    new URL("../NOTICE", import.meta.url),
+    new URL("../plugins/equatorium/NOTICE", import.meta.url),
+  ),
+]);
 
 await chmod(new URL("equatorium-mcp.mjs", runtimeDirectory), 0o755);

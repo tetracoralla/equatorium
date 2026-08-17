@@ -1,6 +1,8 @@
 # Equatorium release path
 
-The source is prepared for a public repository, but publication is intentionally blocked until the owner chooses the license and remote destination. The package remains `private: true` so an incomplete legal or distribution decision cannot be published accidentally.
+The source is licensed under Apache-2.0 with openAdam as the named copyright
+holder. The package remains `private: true` because the current publication
+scope is a public GitHub source repository, not npm registry publication.
 
 ## Technical release gate
 
@@ -19,11 +21,10 @@ Before announcing Agent availability, install the built `plugins/equatorium` bun
 - one Chinese natural-language task per supported adapter routes to one bounded `sei_run` call;
 - invalid or ambiguous input does not fall back to model interpretation.
 
-## Owner decisions before publication
+## Remaining owner and hosting steps
 
-1. Choose the open-source license. Then add the matching `LICENSE` file and `license` package field.
-2. Choose the GitHub owner/repository slug. Then add `repository`, `bugs`, and `homepage` package metadata and configure the Git remote.
-3. Choose distribution scope: source-only GitHub release, Codex plugin distribution, npm package, or a combination. Remove `private: true` only if npm publication is explicitly selected.
-4. Enable GitHub private vulnerability reporting before public announcement.
+1. Choose the GitHub owner/repository slug. Then add `repository`, `bugs`, and `homepage` package metadata and configure the Git remote.
+2. Create the public GitHub repository and enable private vulnerability reporting before public announcement.
+3. Remove `private: true` only if npm publication is separately selected and validated.
 
-No remote creation, push, release, or registry publication is part of the local technical gate.
+No npm or universal plugin-directory publication is implied by a public source push.

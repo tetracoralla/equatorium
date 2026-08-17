@@ -21,7 +21,7 @@ function toolSummary(value: SeiResult): string {
   }
   if (value.operation === "detect") {
     const candidates = value.candidates ?? [];
-    return `Equatorium detection is complete but deliberately unresolved. Use an explicitly named platform or dialect to choose among: ${JSON.stringify(candidates)}. If the user did not name one, present the choices and ask; never assume Unix.`.slice(0, 1_536);
+    return `Equatorium detect is unresolved: ${JSON.stringify(candidates)}. Ask which platform applies; never assume Unix.`.slice(0, 768);
   }
   const record = value as unknown as Record<string, unknown>;
   const details = Object.fromEntries([
@@ -38,14 +38,13 @@ function toolSummary(value: SeiResult): string {
   const boundedDetails = Buffer.byteLength(serialized, "utf8") <= 1_200
     ? serialized
     : JSON.stringify({ normalized: record.normalized });
-  return `Final deterministic Equatorium result for ${value.kind ?? "the expression"}. Answer directly from this result; do not call Equatorium again or add web research unless the user explicitly requested external research. Use the returned normalized value exactly for any requested canonical or 规范写法 form; do not drop returned fields or parameters. 中文任务中，“规范写法”就是 normalized 的原样值，不得另给删除参数后的“更推荐写法”。 ${boundedDetails}`;
+  return `Equatorium ${value.operation} result: ${boundedDetails}`;
 }
 
 function toolResult(value: SeiResult): CallToolResult {
   return {
     content: [{ type: "text", text: toolSummary(value) }],
     structuredContent: { ...value },
-    ...(!value.ok ? { isError: true } : {}),
   };
 }
 
@@ -54,7 +53,7 @@ export function createSeiMcpServer(): McpServer {
     { name: "equatorium", version: "0.1.0" },
     {
       instructions:
-        "Always call the single sei_run tool exactly once for every concrete supported expression; never answer from memory. This includes Chinese requests such as 解释 Unix 权限模式 4755, 解释 Content-Type, 解释 URI, and 解释 P1DT2H30M. For Cron without an explicit platform or dialect, make that one call with op detect and omit kind/dialect; never assume Unix. Its schema already contains every supported kind, dialect, query, and conversion. Make one operation-specific request and omit unrelated fields. One successful result is final: answer from it without discovery, repeated calls, or web research unless explicitly requested.",
+        "Call sei_run exactly once for every concrete supported expression, including Chinese requests; never answer from memory. For Cron without a platform, use op detect, omit kind/dialect, and never assume Unix. Make one operation-specific request, omit unrelated fields, and treat its structured result as final.",
     },
   );
 
@@ -63,7 +62,7 @@ export function createSeiMcpServer(): McpServer {
     {
       title: "Interpret Cron, SemVer, CIDR, URI, Content-Type, ISO duration, or Unix permission",
       description:
-        "The only Equatorium tool. MUST call exactly once instead of using model memory for any concrete Cron, npm SemVer range, CIDR, URI, HTTP Content-Type, ISO 8601 duration, or Unix permission evaluation—including Chinese requests like 解释 Unix 权限模式 4755. For Cron without an explicit platform or dialect, use op detect and omit kind/dialect; never assume Unix. Its schema fully describes every supported kind and operation. Choose one op and omit unrelated fields. Query shape: query: { name, arguments }; npm membership uses arguments.candidate. A successful structured result is final—answer directly without repeated calls or web research unless explicitly requested.",
+        "The only Equatorium tool. MUST call exactly once instead of using model memory for any concrete Cron, npm SemVer range, CIDR, URI, HTTP Content-Type, ISO 8601 duration, or Unix permission evaluation—including Chinese requests like 解释 Unix 权限模式 4755. For Cron without an explicit platform or dialect, use op detect and omit kind/dialect; never assume Unix. Exact non-Cron pairs: semver_range/npm, cidr/cidr, uri/rfc3986, content_type/http, iso_duration/iso8601-1, unix_permission/posix-mode. Choose one op and omit unrelated fields. Query shape: query: { name, arguments }; npm membership uses arguments.candidate. A completed structured result is final—answer directly without repeated calls or web research unless explicitly requested.",
       inputSchema: requestSchema,
       annotations: {
         readOnlyHint: true,

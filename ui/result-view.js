@@ -1,4 +1,4 @@
-import { FIELD_LABELS } from "./catalog.js";
+import { DIAGNOSTIC_MESSAGES, FIELD_LABELS, VALUE_LABELS } from "./catalog.js";
 
 export function element(tag, className, text) {
   const node = document.createElement(tag);
@@ -37,26 +37,51 @@ export function displayValue(value, key = "") {
     if (value.type === "range") return `${value.from} – ${value.to}`;
     return objectSummary(value);
   }
+  const label = VALUE_LABELS[key]?.[String(value)];
+  if (label !== undefined) return label;
   return String(value);
 }
 
-function renderData(value) {
-  const section = element("section", "result-data");
-  section.append(element("h3", "", "它的含义"));
-  const grid = element("div", "data-grid");
-  const entries = Array.isArray(value)
+function entriesFor(value) {
+  return Array.isArray(value)
     ? value.map((item, index) => [String(index + 1), item])
     : typeof value === "object" && value !== null
       ? Object.entries(value)
       : [["value", value]];
-  for (const [key, item] of entries) {
-    const isObject = typeof item === "object" && item !== null;
-    const card = element("div", `data-item${isObject ? " wide" : ""}`);
-    card.append(element("span", "data-key", FIELD_LABELS[key] ?? key));
-    card.append(element("span", "data-value", displayValue(item, key)));
-    grid.append(card);
+}
+
+export function meaningEntries(result) {
+  const primary = result.query_result ?? result.converted ?? result.candidates ?? result.value ?? result.derived;
+  if (primary === undefined) return [];
+  let entries = entriesFor(primary);
+  if (result.kind === "iso_duration") {
+    const nonzero = entries.filter(([, value]) => value !== "0");
+    entries = nonzero.length === 0 ? [["days", "0"]] : nonzero;
   }
-  section.append(grid);
+  if (typeof result.semantics === "object" && result.semantics !== null) {
+    const existing = new Set(entries.map(([key]) => key));
+    entries = entries.concat(
+      Object.entries(result.semantics).filter(([key]) => !existing.has(key)),
+    );
+  }
+  return entries;
+}
+
+export function diagnosticMessage(diagnostic) {
+  return DIAGNOSTIC_MESSAGES[diagnostic.code] ?? diagnostic.message;
+}
+
+function renderData(entries) {
+  const section = element("section", "result-data");
+  section.append(element("h3", "", "含义"));
+  const list = element("dl", "data-list");
+  for (const [key, item] of entries) {
+    const row = element("div", "data-row");
+    row.append(element("dt", "data-key", FIELD_LABELS[key] ?? key));
+    row.append(element("dd", "data-value", displayValue(item, key)));
+    list.append(row);
+  }
+  section.append(list);
   return section;
 }
 
@@ -105,14 +130,14 @@ export function renderPayload(payload, refs) {
     section.append(box);
     refs.content.append(section);
   }
-  const primary = result.query_result ?? result.converted ?? result.candidates ?? result.value ?? result.derived;
-  if (primary !== undefined) refs.content.append(renderData(primary));
+  const entries = meaningEntries(result);
+  if (entries.length > 0) refs.content.append(renderData(entries));
   if (result.diagnostics?.length > 0) {
     const section = element("section", "diagnostics");
     section.append(element("h3", "", "提示"));
     const list = element("ul", "diagnostic-list");
     for (const diagnostic of result.diagnostics) {
-      list.append(element("li", "", diagnostic.message));
+      list.append(element("li", "", diagnosticMessage(diagnostic)));
     }
     section.append(list);
     refs.content.append(section);

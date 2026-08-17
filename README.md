@@ -122,3 +122,10 @@ generated from those same live contracts; schema drift or a mistyped result fail
 - Seven Chinese request fixtures exercise all current adapters as deterministic MCP transport-conformance tests. They do not claim to prove model tool selection; installed-plugin cold-start routing must be tested separately in a genuinely new Codex task.
 
 See [the result contract](docs/CONTRACT.md), [adapter specification](docs/ADAPTER_SPEC.md), and [product model](docs/PRODUCT_MODEL.md).
+
+## License
+
+Copyright 2026 openAdam.
+
+Equatorium is licensed under the [Apache License 2.0](LICENSE). Third-party
+attribution and license texts are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

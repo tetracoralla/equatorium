@@ -40,7 +40,9 @@ describe("MCP Agent surface", () => {
       expect(run?.description).toContain("arguments.candidate");
       expect(run?.description).toContain("Content-Type");
       expect(run?.description).toContain("解释 Unix 权限模式 4755");
-      expect(run?.description).toContain("successful structured result is final");
+      expect(run?.description).toContain("cidr/cidr");
+      expect(run?.description).toContain("unix_permission/posix-mode");
+      expect(run?.description).toContain("completed structured result is final");
       expect(run?.inputSchema).toEqual(createAgentRequestSchema(defaultRegistry));
       expect(JSON.stringify(run?.inputSchema)).not.toContain('"oneOf"');
       expect(run?.inputSchema).toMatchObject({
@@ -101,12 +103,40 @@ describe("MCP Agent surface", () => {
       const text = response.content[0];
       expect(text?.type).toBe("text");
       if (text?.type === "text") {
-        expect(text.text).toContain("Final deterministic Equatorium result");
-        expect(text.text).toContain("do not call Equatorium again");
-        expect(text.text).toContain("do not drop returned fields or parameters");
-        expect(text.text).toContain("不得另给删除参数后的“更推荐写法”");
+        expect(text.text).toContain("Equatorium query result");
         expect(text.text).toContain('"query_result":{"candidate":"3.7.4","matches":true}');
+        expect(text.text).not.toContain("do not call Equatorium again");
         expect(Buffer.byteLength(text.text, "utf8")).toBeLessThan(1_536);
+      }
+    } finally {
+      await mcp.close();
+    }
+  });
+
+  it("returns domain validation failures as completed structured results", async () => {
+    const mcp = await connectedMcp();
+    try {
+      const response = await mcp.client.callTool({
+        name: "sei_run",
+        arguments: {
+          op: "validate",
+          kind: "cron",
+          dialect: "github-actions",
+          expression: "*/1 * * * *",
+        },
+      });
+      expect(response.isError).not.toBe(true);
+      expect(response.structuredContent).toMatchObject({
+        ok: false,
+        operation: "validate",
+        kind: "cron",
+        dialect: "github-actions",
+        diagnostics: [{ code: "E_CRON_GITHUB_MIN_INTERVAL" }],
+      });
+      const text = response.content[0];
+      expect(text?.type).toBe("text");
+      if (text?.type === "text") {
+        expect(text.text).toContain("E_CRON_GITHUB_MIN_INTERVAL");
       }
     } finally {
       await mcp.close();

@@ -8,14 +8,9 @@ export const KIND_LABELS = {
   unix_permission: "Unix 权限",
 };
 
-export const KIND_SUMMARIES = {
-  cron: "五段 Unix 与 GitHub Actions 定时规则。",
-  semver_range: "npm 语义版本范围与版本匹配关系。",
-  cidr: "IPv4 或 IPv6 网络、包含与重叠关系。",
-  uri: "带 scheme 的 RFC 3986 URI、解析与等价比较。",
-  content_type: "HTTP 媒体类型及其参数。",
-  iso_duration: "ISO 8601 时长组成，不假定日历长度。",
-  unix_permission: "八进制或符号形式的 Unix 权限。",
+export const DIALECT_LABELS = {
+  "unix-5": "Unix / Linux",
+  "github-actions": "GitHub Actions",
 };
 
 export const FIELD_LABELS = {
@@ -33,6 +28,13 @@ export const FIELD_LABELS = {
   subject: "权限主体",
   permission: "权限位",
   family: "地址族",
+  scheme: "协议",
+  userinfo: "用户信息",
+  host: "主机",
+  port: "端口",
+  path: "路径",
+  query: "查询参数",
+  fragment: "片段",
   network: "网络地址",
   prefix: "前缀长度",
   netmask: "子网掩码",
@@ -40,6 +42,7 @@ export const FIELD_LABELS = {
   last_address: "末个地址",
   address_count: "地址数量",
   media_type: "媒体类型",
+  type: "主类型",
   subtype: "子类型",
   suffix: "后缀",
   parameters: "参数",
@@ -82,18 +85,22 @@ export const FIELD_LABELS = {
   setuid: "Setuid",
   setgid: "Setgid",
   sticky: "Sticky",
+  day_of_month_day_of_week_relation: "日期与星期关系",
 };
 
-export const QUERY_LABELS = {
-  next_occurrences: "后续执行时间",
-  matches: "是否匹配",
-  intersects: "范围是否相交",
-  contains: "是否包含地址",
-  overlaps: "网络是否重叠",
-  resolve: "解析相对引用",
-  equals: "是否等价",
-  parameter: "读取参数",
-  allows: "检查权限",
+export const VALUE_LABELS = {
+  family: { ipv4: "IPv4", ipv6: "IPv6" },
+  day_of_month_day_of_week_relation: { or: "任一条件满足即可" },
+};
+
+export const DIAGNOSTIC_MESSAGES = {
+  E_CRON_GITHUB_MIN_INTERVAL: "GitHub Actions 的定时间隔不能短于 5 分钟。",
+  E_CRON_GITHUB_SYNTAX: "这不是 GitHub Actions 支持的五段 Cron 写法。",
+  W_CRON_DOM_DOW_OR: "日期和星期都有限制时，满足任一条件就会运行。",
+  W_CRON_PLATFORM_QUERY_LIMITED: "当前只能按 UTC 计算 GitHub Actions 的执行时间。",
+  W_CIDR_HOST_BITS_CLEARED: "输入包含主机位；标准写法已归到对应网络地址。",
+  W_URI_USERINFO: "URI 中含有用户信息；不宜在其中保存凭据。",
+  W_DURATION_CALENDAR_CONTEXT: "年和月取决于具体日历，不能直接换算成固定秒数。",
 };
 
 export const EXAMPLES = {

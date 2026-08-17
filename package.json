@@ -3,6 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "description": "Equatorium: a deterministic semantic interpreter for standardized micro-languages used by agents.",
+  "author": {
+    "name": "openAdam",
+    "url": "https://github.com/tetracoralla"
+  },
+  "license": "Apache-2.0",
   "type": "module",
   "bin": {
     "equatorium": "./dist/cli.js",
@@ -22,6 +27,8 @@
     "docs",
     "schemas",
     "ui",
+    "LICENSE",
+    "NOTICE",
     "THIRD_PARTY_NOTICES.md",
     "README.md"
   ],
@@ -62,6 +69,7 @@
     "@types/node": "26.2.0",
     "@types/semver": "7.8.0",
     "esbuild": "^0.28.2",
+    "happy-dom": "^20.11.2",
     "tsx": "4.23.12",
     "typescript": "7.0.2",
     "vitest": "4.1.10"
