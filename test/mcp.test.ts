@@ -37,6 +37,9 @@ describe("MCP Agent surface", () => {
         openWorldHint: false,
       });
       expect(run?.description).toContain("query: { name, arguments }");
+      expect(run?.description).toContain("do not list MCP resources or templates");
+      expect(run?.description).toContain("detect with only op and expression");
+      expect(run?.description).toContain("fall back to model reasoning");
       expect(run?.description).toContain("arguments.candidate");
       expect(run?.description).toContain("Content-Type");
       expect(run?.description).toContain("解释 Unix 权限模式 4755");
@@ -46,8 +49,11 @@ describe("MCP Agent surface", () => {
       expect(run?.inputSchema).toEqual(createAgentRequestSchema(defaultRegistry));
       expect(JSON.stringify(run?.inputSchema)).not.toContain('"oneOf"');
       expect(run?.inputSchema).toMatchObject({
+        description: expect.stringContaining("detect accepts only op and expression"),
         properties: {
+          op: { description: expect.stringContaining("Detection returns unresolved candidates") },
           kind: { enum: expect.arrayContaining(["cron", "semver_range"]) },
+          context: { description: expect.stringContaining("Never supply when op=detect") },
           query: {
             properties: {
               name: { enum: expect.arrayContaining(["matches", "next_occurrences"]) },
@@ -113,6 +119,64 @@ describe("MCP Agent surface", () => {
     }
   });
 
+  it("keeps Cron platform detection separate from timezone and other ambiguity", async () => {
+    const mcp = await connectedMcp();
+    try {
+      const cron = await mcp.client.callTool({
+        name: "sei_run",
+        arguments: { op: "detect", expression: "0 9 * * 1-5" },
+      });
+      const cronText = cron.content[0];
+      expect(cronText?.type).toBe("text");
+      if (cronText?.type === "text") {
+        expect(cronText.text).toContain("Unix cron or GitHub Actions");
+        expect(cronText.text).toContain("Unix cron uses the scheduler's configured timezone");
+        expect(cronText.text).toContain("does not choose a timezone or calculate occurrences");
+      }
+
+      const permission = await mcp.client.callTool({
+        name: "sei_run",
+        arguments: { op: "detect", expression: "4755" },
+      });
+      const permissionText = permission.content[0];
+      expect(permissionText?.type).toBe("text");
+      if (permissionText?.type === "text") {
+        expect(permissionText.text).toContain("Ask which interpretation applies");
+        expect(permissionText.text).not.toContain("which platform");
+      }
+    } finally {
+      await mcp.close();
+    }
+  });
+
+  it("rejects detect-only fields at the core boundary behind the flat Agent schema", async () => {
+    const mcp = await connectedMcp();
+    try {
+      const response = await mcp.client.callTool({
+        name: "sei_run",
+        arguments: {
+          op: "detect",
+          expression: "0 9 * * 1-5",
+          context: { timezone: "Asia/Shanghai" },
+          derive: ["next_occurrences"],
+        },
+      });
+      expect(response.isError).not.toBe(true);
+      expect(response.structuredContent).toMatchObject({
+        ok: false,
+        operation: "detect",
+        diagnostics: [{ code: "E_REQUEST_INVALID" }],
+      });
+      const text = response.content[0];
+      expect(text?.type).toBe("text");
+      if (text?.type === "text") {
+        expect(text.text).toContain("Detect requests accept only op, expression");
+      }
+    } finally {
+      await mcp.close();
+    }
+  });
+
   it("returns domain validation failures as completed structured results", async () => {
     const mcp = await connectedMcp();
     try {
@@ -137,6 +201,34 @@ describe("MCP Agent surface", () => {
       expect(text?.type).toBe("text");
       if (text?.type === "text") {
         expect(text.text).toContain("E_CRON_GITHUB_MIN_INTERVAL");
+      }
+    } finally {
+      await mcp.close();
+    }
+  });
+
+  it("does not present an invalid SemVer candidate as a negative match", async () => {
+    const mcp = await connectedMcp();
+    try {
+      const response = await mcp.client.callTool({
+        name: "sei_run",
+        arguments: {
+          op: "query",
+          kind: "semver_range",
+          dialect: "npm",
+          expression: "^3.2.0",
+          query: { name: "matches", arguments: { candidate: "not-a-version" } },
+        },
+      });
+      expect(response.structuredContent).toMatchObject({
+        ok: false,
+        diagnostics: [{ code: "E_QUERY_INVALID" }],
+      });
+      const text = response.content[0];
+      expect(text?.type).toBe("text");
+      if (text?.type === "text") {
+        expect(text.text).toContain("cannot be evaluated");
+        expect(text.text).toContain("not a non-match or false result");
       }
     } finally {
       await mcp.close();

@@ -1,6 +1,6 @@
 {
   "name": "equatorium",
-  "version": "0.1.0+codex.20260817202944",
+  "version": "0.1.0+codex.20260819120734",
   "description": "Equatorium deterministically interprets specification-dense standard expressions for Codex.",
   "author": {
     "name": "openAdam",

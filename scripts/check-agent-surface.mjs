@@ -62,7 +62,11 @@ assert.equal(serverConfig?.command, "node");
 assert.deepEqual(serverConfig?.args, ["runtime/equatorium-mcp.mjs"]);
 assert.equal(serverConfig?.cwd, ".");
 assert(!skill.includes("[TODO:"), "Agent skill contains an unfinished placeholder.");
-assert.match(skill, /Always call Equatorium sei_run exactly once/);
+assert.match(skill, /Call Equatorium sei_run directly and exactly once/);
+assert.match(skill, /Do not call `list_mcp_resources` or `list_mcp_resource_templates`/);
+assert(skill.includes('only `{ op: "detect", expression }`'));
+assert.match(skill, /never assume Unix, infer the Unix scheduler timezone/);
+assert.match(skill, /must never be reported as `false`, “不包含”, or “不匹配”/);
 assert.match(skill, /解释 Unix 权限模式 4755/);
 assert(skill.includes("Call `sei_run` directly"));
 assert.match(skill, /Cron without a named platform or dialect/);
@@ -97,6 +101,11 @@ async function verifyRuntime(command, args, cwd) {
   try {
     const tools = await client.listTools();
     assert.deepEqual(tools.tools.map((tool) => tool.name), ["sei_run"]);
+    assert.match(tools.tools[0].description, /do not list MCP resources or templates/i);
+    assert.match(tools.tools[0].description, /detect with only op and expression/);
+    assert.match(tools.tools[0].description, /fall back to model reasoning/);
+    assert.match(tools.tools[0].description, /Unix cron uses its scheduler's configured timezone/);
+    assert.match(tools.tools[0].description, /invalid SemVer cannot be evaluated/);
     assert.match(tools.tools[0].description, /Cron without an explicit platform or dialect/);
     assert.match(tools.tools[0].description, /never assume Unix/);
     const response = await client.callTool({

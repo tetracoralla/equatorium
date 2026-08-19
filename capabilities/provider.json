@@ -26,7 +26,7 @@
             "output": "sha256:b99be6f649e0d5ab347076e4d2d074ddc3a5d7cd198aef91a15812534c25a5b2"
           },
           "transportSchemaDigests": {
-            "input": "sha256:d163936ae7522f77e5ae9239ebb25c7859684a0946b86c1c3ae53d114b8aa83b"
+            "input": "sha256:257e6a6a2d86452235a129296525c1575eaba9e3b47c39346f0b62ae695bf954"
           },
           "annotations": {
             "readOnlyHint": true,
