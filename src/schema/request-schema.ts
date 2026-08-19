@@ -317,14 +317,14 @@ export function createAgentRequestSchema(registry: ExpressionRegistry): Schema {
     $id: "https://openadam.local/schemas/sei.agent-request.v1.schema.json",
     title: "SEI Agent request v1",
     description:
-      "Use one operation only. detect accepts only expression and limits. interpret/validate/normalize require kind; query additionally requires query; convert additionally requires convert. Omit derive unless kind=cron. A successful structured result is final—do not add normalize or interpret calls.",
+      "Use one operation only. detect accepts only op and expression, plus optional schema_version or limits; omit kind, dialect, context, derive, query, and convert. Detection never calculates occurrences. interpret/validate/normalize require kind; query additionally requires query; convert additionally requires convert. Omit derive unless kind=cron. A successful structured result is final—do not add normalize or interpret calls.",
     type: "object",
     required: ["op", "expression"],
     properties: {
       schema_version: { const: "sei.request.v1" },
       op: {
         enum: ["interpret", "validate", "normalize", "query", "convert", "detect"],
-        description: "Choose the single operation that directly answers the request.",
+        description: "Choose one operation. For detect, send only op and expression (plus optional schema_version or limits); never send kind, dialect, context, derive, query, or convert. Detection returns unresolved candidates and does not choose a timezone or calculate occurrences.",
       },
       expression: { type: "string", maxLength: HARD_LIMITS.max_expression_length },
       kind: {
@@ -339,6 +339,7 @@ export function createAgentRequestSchema(registry: ExpressionRegistry): Schema {
       },
       context: {
         type: "object",
+        description: "Optional only for operations and kinds that declare context. Never supply when op=detect.",
         properties: mergedProperties(descriptors.map((descriptor) => descriptor.context_contract)),
         additionalProperties: false,
       },
@@ -347,7 +348,7 @@ export function createAgentRequestSchema(registry: ExpressionRegistry): Schema {
         items: { type: "string", enum: deriveNames },
         uniqueItems: true,
         maxItems: deriveNames.length,
-        description: "Optional only for kind=cron. Omit for ISO duration and every other kind.",
+        description: "Optional only for kind=cron interpret/validate/normalize. Never supply when op=detect or op=query; omit for every non-Cron kind.",
       },
       query: {
         type: "object",

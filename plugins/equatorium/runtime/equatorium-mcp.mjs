@@ -43987,14 +43987,14 @@ function createAgentRequestSchema(registry2) {
     $schema: "https://json-schema.org/draft/2020-12/schema",
     $id: "https://openadam.local/schemas/sei.agent-request.v1.schema.json",
     title: "SEI Agent request v1",
-    description: "Use one operation only. detect accepts only expression and limits. interpret/validate/normalize require kind; query additionally requires query; convert additionally requires convert. Omit derive unless kind=cron. A successful structured result is final\u2014do not add normalize or interpret calls.",
+    description: "Use one operation only. detect accepts only op and expression, plus optional schema_version or limits; omit kind, dialect, context, derive, query, and convert. Detection never calculates occurrences. interpret/validate/normalize require kind; query additionally requires query; convert additionally requires convert. Omit derive unless kind=cron. A successful structured result is final\u2014do not add normalize or interpret calls.",
     type: "object",
     required: ["op", "expression"],
     properties: {
       schema_version: { const: "sei.request.v1" },
       op: {
         enum: ["interpret", "validate", "normalize", "query", "convert", "detect"],
-        description: "Choose the single operation that directly answers the request."
+        description: "Choose one operation. For detect, send only op and expression (plus optional schema_version or limits); never send kind, dialect, context, derive, query, or convert. Detection returns unresolved candidates and does not choose a timezone or calculate occurrences."
       },
       expression: { type: "string", maxLength: HARD_LIMITS.max_expression_length },
       kind: {
@@ -44009,6 +44009,7 @@ function createAgentRequestSchema(registry2) {
       },
       context: {
         type: "object",
+        description: "Optional only for operations and kinds that declare context. Never supply when op=detect.",
         properties: mergedProperties(descriptors.map((descriptor) => descriptor.context_contract)),
         additionalProperties: false
       },
@@ -44017,7 +44018,7 @@ function createAgentRequestSchema(registry2) {
         items: { type: "string", enum: deriveNames },
         uniqueItems: true,
         maxItems: deriveNames.length,
-        description: "Optional only for kind=cron. Omit for ISO duration and every other kind."
+        description: "Optional only for kind=cron interpret/validate/normalize. Never supply when op=detect or op=query; omit for every non-Cron kind."
       },
       query: {
         type: "object",
@@ -44173,11 +44174,15 @@ var requestSchema = standardJsonSchema(createAgentRequestSchema(defaultRegistry)
 function toolSummary(value) {
   if (!value.ok) {
     const diagnostic = value.diagnostics[0];
+    if (value.kind === "semver_range" && value.operation === "query" && diagnostic?.code === "E_QUERY_INVALID") {
+      return `Equatorium SemVer query is invalid and cannot be evaluated; this is not a non-match or false result: ${diagnostic.message}`.slice(0, 384);
+    }
     return diagnostic === void 0 ? `Equatorium ${value.operation} failed.` : `Equatorium ${value.operation} failed: ${diagnostic.code} \u2014 ${diagnostic.message}`.slice(0, 384);
   }
   if (value.operation === "detect") {
     const candidates = value.candidates ?? [];
-    return `Equatorium detect is unresolved: ${JSON.stringify(candidates)}. Ask which platform applies; never assume Unix.`.slice(0, 768);
+    const guidance = candidates.some((candidate) => candidate.kind === "cron") ? "Ask whether the schedule is Unix cron or GitHub Actions. GitHub Actions schedules use UTC; Unix cron uses the scheduler's configured timezone. Detection does not choose a timezone or calculate occurrences." : "Ask which interpretation applies; do not silently choose a supported candidate.";
+    return `Equatorium detect is unresolved: ${JSON.stringify(candidates)}. ${guidance}`.slice(0, 1024);
   }
   const record2 = value;
   const details = Object.fromEntries([
@@ -44204,14 +44209,14 @@ function createSeiMcpServer() {
   const server = new McpServer(
     { name: "equatorium", version: "0.1.0" },
     {
-      instructions: "Call sei_run exactly once for every concrete supported expression, including Chinese requests; never answer from memory. For Cron without a platform, use op detect, omit kind/dialect, and never assume Unix. Make one operation-specific request, omit unrelated fields, and treat its structured result as final."
+      instructions: "Call sei_run directly and exactly once for every concrete supported expression, including Chinese requests; never answer from memory. Do not list MCP resources or templates because Equatorium exposes none. For Cron without a platform, call detect with only op and expression, then ask the user to choose; never add context, derive, query, or convert; never assume Unix, infer the Unix scheduler timezone, compute occurrences, or fall back to model reasoning. GitHub Actions schedules use UTC; Unix cron uses its scheduler's configured timezone. Make one operation-specific request, omit unrelated fields, and treat its structured result as final. A structured error is not a negative match; invalid SemVer cannot be evaluated and must never be reported as false or not contained."
     }
   );
   server.registerTool(
     "sei_run",
     {
       title: "Interpret Cron, SemVer, CIDR, URI, Content-Type, ISO duration, or Unix permission",
-      description: "The only Equatorium tool. MUST call exactly once instead of using model memory for any concrete Cron, npm SemVer range, CIDR, URI, HTTP Content-Type, ISO 8601 duration, or Unix permission evaluation\u2014including Chinese requests like \u89E3\u91CA Unix \u6743\u9650\u6A21\u5F0F 4755. For Cron without an explicit platform or dialect, use op detect and omit kind/dialect; never assume Unix. Exact non-Cron pairs: semver_range/npm, cidr/cidr, uri/rfc3986, content_type/http, iso_duration/iso8601-1, unix_permission/posix-mode. Choose one op and omit unrelated fields. Query shape: query: { name, arguments }; npm membership uses arguments.candidate. A completed structured result is final\u2014answer directly without repeated calls or web research unless explicitly requested.",
+      description: "The only Equatorium tool. Call it directly; do not list MCP resources or templates because this server exposes none. MUST call exactly once instead of using model memory for any concrete Cron, npm SemVer range, CIDR, URI, HTTP Content-Type, ISO 8601 duration, or Unix permission evaluation\u2014including Chinese requests like \u89E3\u91CA Unix \u6743\u9650\u6A21\u5F0F 4755. For Cron without an explicit platform or dialect, call detect with only op and expression, then ask the user to choose; never add context, derive, query, or convert; never assume Unix, infer the Unix scheduler timezone, compute occurrences, or fall back to model reasoning. GitHub Actions schedules use UTC; Unix cron uses its scheduler's configured timezone. Exact non-Cron pairs: semver_range/npm, cidr/cidr, uri/rfc3986, content_type/http, iso_duration/iso8601-1, unix_permission/posix-mode. Choose one op and omit unrelated fields. Query shape: query: { name, arguments }; npm membership uses arguments.candidate. A completed structured result is final\u2014answer directly without repeated calls or web research unless explicitly requested. A structured error is not a negative match; invalid SemVer cannot be evaluated and must never be reported as false or not contained.",
       inputSchema: requestSchema,
       annotations: {
         readOnlyHint: true,

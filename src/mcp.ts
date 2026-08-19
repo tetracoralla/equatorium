@@ -15,13 +15,23 @@ const requestSchema = standardJsonSchema<SeiRequest>(createAgentRequestSchema(de
 function toolSummary(value: SeiResult): string {
   if (!value.ok) {
     const diagnostic = value.diagnostics[0];
+    if (
+      value.kind === "semver_range" &&
+      value.operation === "query" &&
+      diagnostic?.code === "E_QUERY_INVALID"
+    ) {
+      return `Equatorium SemVer query is invalid and cannot be evaluated; this is not a non-match or false result: ${diagnostic.message}`.slice(0, 384);
+    }
     return diagnostic === undefined
       ? `Equatorium ${value.operation} failed.`
       : `Equatorium ${value.operation} failed: ${diagnostic.code} — ${diagnostic.message}`.slice(0, 384);
   }
   if (value.operation === "detect") {
     const candidates = value.candidates ?? [];
-    return `Equatorium detect is unresolved: ${JSON.stringify(candidates)}. Ask which platform applies; never assume Unix.`.slice(0, 768);
+    const guidance = candidates.some((candidate) => candidate.kind === "cron")
+      ? "Ask whether the schedule is Unix cron or GitHub Actions. GitHub Actions schedules use UTC; Unix cron uses the scheduler's configured timezone. Detection does not choose a timezone or calculate occurrences."
+      : "Ask which interpretation applies; do not silently choose a supported candidate.";
+    return `Equatorium detect is unresolved: ${JSON.stringify(candidates)}. ${guidance}`.slice(0, 1_024);
   }
   const record = value as unknown as Record<string, unknown>;
   const details = Object.fromEntries([
@@ -53,7 +63,7 @@ export function createSeiMcpServer(): McpServer {
     { name: "equatorium", version: "0.1.0" },
     {
       instructions:
-        "Call sei_run exactly once for every concrete supported expression, including Chinese requests; never answer from memory. For Cron without a platform, use op detect, omit kind/dialect, and never assume Unix. Make one operation-specific request, omit unrelated fields, and treat its structured result as final.",
+        "Call sei_run directly and exactly once for every concrete supported expression, including Chinese requests; never answer from memory. Do not list MCP resources or templates because Equatorium exposes none. For Cron without a platform, call detect with only op and expression, then ask the user to choose; never add context, derive, query, or convert; never assume Unix, infer the Unix scheduler timezone, compute occurrences, or fall back to model reasoning. GitHub Actions schedules use UTC; Unix cron uses its scheduler's configured timezone. Make one operation-specific request, omit unrelated fields, and treat its structured result as final. A structured error is not a negative match; invalid SemVer cannot be evaluated and must never be reported as false or not contained.",
     },
   );
 
@@ -62,7 +72,7 @@ export function createSeiMcpServer(): McpServer {
     {
       title: "Interpret Cron, SemVer, CIDR, URI, Content-Type, ISO duration, or Unix permission",
       description:
-        "The only Equatorium tool. MUST call exactly once instead of using model memory for any concrete Cron, npm SemVer range, CIDR, URI, HTTP Content-Type, ISO 8601 duration, or Unix permission evaluation—including Chinese requests like 解释 Unix 权限模式 4755. For Cron without an explicit platform or dialect, use op detect and omit kind/dialect; never assume Unix. Exact non-Cron pairs: semver_range/npm, cidr/cidr, uri/rfc3986, content_type/http, iso_duration/iso8601-1, unix_permission/posix-mode. Choose one op and omit unrelated fields. Query shape: query: { name, arguments }; npm membership uses arguments.candidate. A completed structured result is final—answer directly without repeated calls or web research unless explicitly requested.",
+        "The only Equatorium tool. Call it directly; do not list MCP resources or templates because this server exposes none. MUST call exactly once instead of using model memory for any concrete Cron, npm SemVer range, CIDR, URI, HTTP Content-Type, ISO 8601 duration, or Unix permission evaluation—including Chinese requests like 解释 Unix 权限模式 4755. For Cron without an explicit platform or dialect, call detect with only op and expression, then ask the user to choose; never add context, derive, query, or convert; never assume Unix, infer the Unix scheduler timezone, compute occurrences, or fall back to model reasoning. GitHub Actions schedules use UTC; Unix cron uses its scheduler's configured timezone. Exact non-Cron pairs: semver_range/npm, cidr/cidr, uri/rfc3986, content_type/http, iso_duration/iso8601-1, unix_permission/posix-mode. Choose one op and omit unrelated fields. Query shape: query: { name, arguments }; npm membership uses arguments.candidate. A completed structured result is final—answer directly without repeated calls or web research unless explicitly requested. A structured error is not a negative match; invalid SemVer cannot be evaluated and must never be reported as false or not contained.",
       inputSchema: requestSchema,
       annotations: {
         readOnlyHint: true,
