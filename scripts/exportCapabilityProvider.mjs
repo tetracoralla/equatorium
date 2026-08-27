@@ -83,7 +83,7 @@ try {
   )
 
   const manifest = {
-    schemaVersion: 'openadam.provider-manifest.v0.1',
+    schemaVersion: 'openadam.provider-manifest.v0.3',
     provider: {
       id: 'org.openadam.equatorium',
       name: 'Equatorium',
@@ -92,12 +92,19 @@ try {
     implementations: [
       {
         capabilityId: 'org.openadam.standard-expression.run',
-        capabilityVersion: '0.1.0',
+        capabilityVersion: '0.2.0',
+        profileDigest: 'sha256:880f631de0921b5093fe8357b0138fd8e6459ca80a44a2894e15d3db2159b2b5',
         adapter: {
           protocol: 'openadam.capability-jsonl.v0.1',
           command: 'node',
           args: ['scripts/runCapabilityAdapter.mjs'],
         },
+        adapterBindings: [
+          {
+            operationId: 'run',
+            target: 'scripts/runCapabilityAdapter.mjs#run',
+          },
+        ],
         bindings: [
           {
             operationId: 'run',

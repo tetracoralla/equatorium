@@ -5,6 +5,7 @@ export const KIND_LABELS = {
   uri: "URI",
   content_type: "Content-Type",
   iso_duration: "ISO 时长",
+  rrule: "重复规则",
   unix_permission: "Unix 权限",
 };
 
@@ -85,12 +86,30 @@ export const FIELD_LABELS = {
   setuid: "Setuid",
   setgid: "Setgid",
   sticky: "Sticky",
+  frequency: "频率",
+  interval: "间隔",
+  until: "截止时间",
+  week_start: "每周起始日",
+  by_second: "秒筛选",
+  by_minute: "分钟筛选",
+  by_hour: "小时筛选",
+  by_day: "星期筛选",
+  by_month_day: "月内日期筛选",
+  by_year_day: "年内日期筛选",
+  by_week_number: "周数筛选",
+  by_month: "月份筛选",
+  by_set_position: "集合位置筛选",
+  weekday: "星期",
+  ordinal: "序数",
+  bounded: "是否有终止边界",
+  termination: "终止方式",
   day_of_month_day_of_week_relation: "日期与星期关系",
 };
 
 export const VALUE_LABELS = {
   family: { ipv4: "IPv4", ipv6: "IPv6" },
   day_of_month_day_of_week_relation: { or: "任一条件满足即可" },
+  termination: { count: "次数", until: "截止时间", unbounded: "无界" },
 };
 
 export const DIAGNOSTIC_MESSAGES = {

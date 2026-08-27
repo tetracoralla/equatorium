@@ -44,10 +44,10 @@ async function loadConformanceFixture(): Promise<ConformanceFixture> {
   return value as ConformanceFixture;
 }
 
-describe("seven-category MCP transport conformance over stdio", () => {
+describe("eight-category MCP transport conformance over stdio", () => {
   it("executes every known task through the single sei_run tool", async () => {
     const fixture = await loadConformanceFixture();
-    expect(fixture.tasks).toHaveLength(7);
+    expect(fixture.tasks).toHaveLength(8);
     expect(new Set(fixture.tasks.map((task) => task.request.kind))).toEqual(
       new Set([
         "cron",
@@ -56,6 +56,7 @@ describe("seven-category MCP transport conformance over stdio", () => {
         "uri",
         "content_type",
         "iso_duration",
+        "rrule",
         "unix_permission",
       ]),
     );
@@ -74,6 +75,19 @@ describe("seven-category MCP transport conformance over stdio", () => {
     try {
       const listed = await client.listTools();
       expect(listed.tools.map((tool) => tool.name)).toEqual(["sei_run"]);
+      const invalid = await client.callTool({
+        name: "sei_run",
+        arguments: {
+          op: "interpret",
+          kind: "rrule",
+          expression: "RRULE:FREQ=WEEKLY;BYDAY=MO;BYDAY=TU",
+        },
+      });
+      expect(invalid.isError).not.toBe(true);
+      expect(invalid.structuredContent).toMatchObject({
+        ok: false,
+        diagnostics: [{ code: "E_RRULE_FIELD_DUPLICATE" }],
+      });
       for (const task of fixture.tasks) {
         expect(task.tool, task.user_task).toBe("sei_run");
         const response = await client.callTool({ name: task.tool, arguments: { ...task.request } });

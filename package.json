@@ -69,6 +69,7 @@
     "cron-parser": "5.8.1",
     "ipaddr.js": "2.5.0",
     "iso8601-duration": "2.1.4",
+    "rrule": "2.8.1",
     "semver": "7.8.5",
     "uri-js": "4.4.1",
     "zod": "^4.4.3"

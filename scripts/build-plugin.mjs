@@ -13,6 +13,7 @@ const enginePackages = [
   "cron-parser",
   "ipaddr.js",
   "iso8601-duration",
+  "rrule",
   "semver",
   "uri-js",
 ];

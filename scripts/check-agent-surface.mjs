@@ -74,13 +74,14 @@ assert.match(skill, /never assume Unix/);
 assert(skill.includes("unresolved (`resolved: false`)"));
 assert.match(skill, /`cidr\/cidr`/);
 assert.match(skill, /`unix_permission\/posix-mode`/);
+assert.match(skill, /`rrule\/rfc5545`/);
 assert.equal(rootLicense, pluginLicense, "Root and bundled Apache licenses have drifted.");
 assert.equal(rootNotice, pluginNotice, "Root and bundled NOTICE files have drifted.");
 assert.match(rootLicense, /Apache License\s+Version 2\.0/);
 assert.match(rootLicense, /Copyright 2026 openAdam/);
 assert.match(rootNotice, /Copyright 2026 openAdam/);
 assert.equal(rootNotices, pluginNotices, "Root and bundled third-party notices have drifted.");
-for (const packageName of ["@modelcontextprotocol/server", "ajv", "cron-parser", "semver", "zod"]) {
+for (const packageName of ["@modelcontextprotocol/server", "ajv", "cron-parser", "rrule", "semver", "zod"]) {
   assert.match(pluginNotices, new RegExp(`^## ${packageName.replace("/", "\\/")}@`, "m"));
 }
 assert.match(buildScript, /legalComments: "external"/);
@@ -101,6 +102,12 @@ async function verifyRuntime(command, args, cwd) {
   try {
     const tools = await client.listTools();
     assert.deepEqual(tools.tools.map((tool) => tool.name), ["sei_run"]);
+    assert(tools.tools[0].outputSchema, "MCP tool must publish an output schema for host admission.");
+    assert.equal(tools.tools[0].outputSchema.additionalProperties, false);
+    assert(
+      Buffer.byteLength(JSON.stringify(tools.tools[0].outputSchema), "utf8") < 8_192,
+      "MCP output catalog exceeds the 8 KiB tools/list budget.",
+    );
     assert.match(tools.tools[0].description, /do not list MCP resources or templates/i);
     assert.match(tools.tools[0].description, /detect with only op and expression/);
     assert.match(tools.tools[0].description, /fall back to model reasoning/);
@@ -108,6 +115,8 @@ async function verifyRuntime(command, args, cwd) {
     assert.match(tools.tools[0].description, /invalid SemVer cannot be evaluated/);
     assert.match(tools.tools[0].description, /Cron without an explicit platform or dialect/);
     assert.match(tools.tools[0].description, /never assume Unix/);
+    assert.match(tools.tools[0].description, /rrule\/rfc5545/i);
+    assert.match(tools.tools[0].description, /never expand occurrences/i);
     const response = await client.callTool({
       name: "sei_run",
       arguments: {
@@ -131,6 +140,7 @@ async function verifyRuntime(command, args, cwd) {
       { op: "interpret", kind: "content_type", expression: "text/html; charset=utf-8" },
       { op: "interpret", kind: "cron", dialect: "unix-5", expression: "0 9 * * *" },
       { op: "interpret", kind: "iso_duration", expression: "P1DT3H" },
+      { op: "interpret", kind: "rrule", expression: "RRULE:FREQ=WEEKLY;COUNT=10;BYDAY=MO,WE" },
       { op: "interpret", kind: "semver_range", expression: "^3.2.0" },
       { op: "interpret", kind: "uri", expression: "https://example.com/a" },
     ];

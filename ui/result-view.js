@@ -58,6 +58,11 @@ export function meaningEntries(result) {
     const nonzero = entries.filter(([, value]) => value !== "0");
     entries = nonzero.length === 0 ? [["days", "0"]] : nonzero;
   }
+  if (result.kind === "rrule") {
+    entries = entries.filter(([, value]) =>
+      value !== null && (!Array.isArray(value) || value.length > 0)
+    );
+  }
   if (typeof result.semantics === "object" && result.semantics !== null) {
     const existing = new Set(entries.map(([key]) => key));
     entries = entries.concat(

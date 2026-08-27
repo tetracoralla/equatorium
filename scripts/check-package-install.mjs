@@ -43,12 +43,21 @@ async function verifyMcp(command) {
   try {
     const tools = await client.listTools();
     assert.deepEqual(tools.tools.map((tool) => tool.name), ["sei_run"]);
+    assert(tools.tools[0].outputSchema, "Installed MCP tool omitted its output schema.");
+    assert.equal(tools.tools[0].outputSchema.additionalProperties, false);
     const result = await client.callTool({
       name: "sei_run",
-      arguments: { op: "interpret", kind: "iso_duration", expression: "P1DT3H" },
+      arguments: {
+        op: "interpret",
+        kind: "rrule",
+        expression: "RRULE:FREQ=WEEKLY;COUNT=10;BYDAY=MO,WE",
+      },
     });
     assert.notEqual(result.isError, true);
-    assert.equal(result.structuredContent?.normalized, "P1DT3H");
+    assert.equal(
+      result.structuredContent?.normalized,
+      "RRULE:FREQ=WEEKLY;COUNT=10;BYDAY=MO,WE",
+    );
   } finally {
     await client.close();
   }
@@ -110,6 +119,13 @@ try {
   });
   assert.equal(libraryResult.ok, true);
   assert.equal(libraryResult.normalized, "0755");
+  const rruleResult = await library.interpretBounded({
+    op: "interpret",
+    kind: "rrule",
+    expression: "RRULE:FREQ=DAILY",
+  });
+  assert.equal(rruleResult.ok, true);
+  assert.deepEqual(rruleResult.semantics, { bounded: false, termination: "unbounded" });
 
   for (const name of ["equatorium", "sei"]) {
     const result = run(executable(consumerRoot, name), [], {

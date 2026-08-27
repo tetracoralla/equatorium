@@ -189,6 +189,7 @@ describe("normalization contract", () => {
     { kind: "uri", expression: "HTTP://Example.COM:80/a/../b" },
     { kind: "content_type", expression: "Text/HTML; Charset=utf-8" },
     { kind: "iso_duration", expression: "PT1,5S" },
+    { kind: "rrule", expression: "rrule:byday=mo,we;count=10;freq=weekly" },
     { kind: "unix_permission", expression: "rwxr-xr-x" },
   ];
 

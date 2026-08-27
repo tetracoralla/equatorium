@@ -80,6 +80,7 @@ const resultContractRequests = [
   { op: "interpret", kind: "uri", expression: "https://example.com/path" },
   { op: "interpret", kind: "content_type", expression: "text/html; charset=utf-8" },
   { op: "interpret", kind: "iso_duration", expression: "P1DT3H" },
+  { op: "interpret", kind: "rrule", expression: "RRULE:FREQ=WEEKLY;COUNT=10;BYDAY=MO,WE" },
   { op: "interpret", kind: "unix_permission", expression: "755" },
   {
     op: "query",

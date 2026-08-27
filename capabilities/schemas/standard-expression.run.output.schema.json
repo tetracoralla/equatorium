@@ -3631,6 +3631,838 @@
           "type": "string"
         },
         "kind": {
+          "const": "rrule"
+        },
+        "dialect": {
+          "enum": [
+            "rfc5545"
+          ]
+        },
+        "normalized": {
+          "type": "string"
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "diagnostics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "code",
+              "severity",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "severity": {
+                "enum": [
+                  "error",
+                  "warning"
+                ]
+              },
+              "message": {
+                "type": "string"
+              },
+              "span": {
+                "type": "object",
+                "properties": {
+                  "start": {
+                    "type": "integer"
+                  },
+                  "end": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "start",
+                  "end"
+                ],
+                "additionalProperties": false
+              },
+              "expected": {
+                "type": "object"
+              },
+              "details": {
+                "type": "object"
+              },
+              "repair_candidates": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "expression": {
+                      "type": "string"
+                    },
+                    "confidence": {
+                      "type": "number"
+                    },
+                    "reason": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "expression"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "provenance": {
+          "type": "object",
+          "required": [
+            "spec",
+            "compatibility_mode"
+          ],
+          "properties": {
+            "spec": {
+              "type": "string"
+            },
+            "compatibility_mode": {
+              "type": "string"
+            },
+            "timezone_data_version": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "value": {
+          "type": "object",
+          "properties": {
+            "frequency": {
+              "enum": [
+                "YEARLY",
+                "MONTHLY",
+                "WEEKLY",
+                "DAILY",
+                "HOURLY",
+                "MINUTELY",
+                "SECONDLY"
+              ]
+            },
+            "interval": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647
+            },
+            "count": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "until": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(?:0[1-9]\\d{2}|[1-9]\\d{3})\\d{4}T\\d{6}Z$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "week_start": {
+              "enum": [
+                "MO",
+                "TU",
+                "WE",
+                "TH",
+                "FR",
+                "SA",
+                "SU"
+              ]
+            },
+            "by_second": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 60
+              }
+            },
+            "by_minute": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 59
+              }
+            },
+            "by_hour": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 23
+              }
+            },
+            "by_day": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "weekday": {
+                    "enum": [
+                      "MO",
+                      "TU",
+                      "WE",
+                      "TH",
+                      "FR",
+                      "SA",
+                      "SU"
+                    ]
+                  },
+                  "ordinal": {
+                    "type": "integer",
+                    "minimum": -53,
+                    "maximum": 53,
+                    "not": {
+                      "const": 0
+                    }
+                  }
+                },
+                "required": [
+                  "weekday"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "by_month_day": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "integer",
+                "minimum": -31,
+                "maximum": 31,
+                "not": {
+                  "const": 0
+                }
+              }
+            },
+            "by_year_day": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "integer",
+                "minimum": -366,
+                "maximum": 366,
+                "not": {
+                  "const": 0
+                }
+              }
+            },
+            "by_week_number": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "integer",
+                "minimum": -53,
+                "maximum": 53,
+                "not": {
+                  "const": 0
+                }
+              }
+            },
+            "by_month": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 12
+              }
+            },
+            "by_set_position": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "integer",
+                "minimum": -366,
+                "maximum": 366,
+                "not": {
+                  "const": 0
+                }
+              }
+            }
+          },
+          "required": [
+            "frequency",
+            "interval",
+            "count",
+            "until",
+            "week_start",
+            "by_second",
+            "by_minute",
+            "by_hour",
+            "by_day",
+            "by_month_day",
+            "by_year_day",
+            "by_week_number",
+            "by_month",
+            "by_set_position"
+          ],
+          "additionalProperties": false
+        },
+        "semantics": {
+          "type": "object",
+          "properties": {
+            "bounded": {
+              "type": "boolean"
+            },
+            "termination": {
+              "enum": [
+                "count",
+                "until",
+                "unbounded"
+              ]
+            }
+          },
+          "required": [
+            "bounded",
+            "termination"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "ok",
+        "operation",
+        "input",
+        "kind",
+        "dialect",
+        "normalized",
+        "capabilities",
+        "diagnostics",
+        "provenance",
+        "value",
+        "semantics"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "const": true
+        },
+        "operation": {
+          "const": "normalize"
+        },
+        "input": {
+          "type": "string"
+        },
+        "kind": {
+          "const": "rrule"
+        },
+        "dialect": {
+          "enum": [
+            "rfc5545"
+          ]
+        },
+        "normalized": {
+          "type": "string"
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "diagnostics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "code",
+              "severity",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "severity": {
+                "enum": [
+                  "error",
+                  "warning"
+                ]
+              },
+              "message": {
+                "type": "string"
+              },
+              "span": {
+                "type": "object",
+                "properties": {
+                  "start": {
+                    "type": "integer"
+                  },
+                  "end": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "start",
+                  "end"
+                ],
+                "additionalProperties": false
+              },
+              "expected": {
+                "type": "object"
+              },
+              "details": {
+                "type": "object"
+              },
+              "repair_candidates": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "expression": {
+                      "type": "string"
+                    },
+                    "confidence": {
+                      "type": "number"
+                    },
+                    "reason": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "expression"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "provenance": {
+          "type": "object",
+          "required": [
+            "spec",
+            "compatibility_mode"
+          ],
+          "properties": {
+            "spec": {
+              "type": "string"
+            },
+            "compatibility_mode": {
+              "type": "string"
+            },
+            "timezone_data_version": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "value": {
+          "type": "object",
+          "properties": {
+            "frequency": {
+              "enum": [
+                "YEARLY",
+                "MONTHLY",
+                "WEEKLY",
+                "DAILY",
+                "HOURLY",
+                "MINUTELY",
+                "SECONDLY"
+              ]
+            },
+            "interval": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647
+            },
+            "count": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "until": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(?:0[1-9]\\d{2}|[1-9]\\d{3})\\d{4}T\\d{6}Z$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "week_start": {
+              "enum": [
+                "MO",
+                "TU",
+                "WE",
+                "TH",
+                "FR",
+                "SA",
+                "SU"
+              ]
+            },
+            "by_second": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 60
+              }
+            },
+            "by_minute": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 59
+              }
+            },
+            "by_hour": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 23
+              }
+            },
+            "by_day": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "weekday": {
+                    "enum": [
+                      "MO",
+                      "TU",
+                      "WE",
+                      "TH",
+                      "FR",
+                      "SA",
+                      "SU"
+                    ]
+                  },
+                  "ordinal": {
+                    "type": "integer",
+                    "minimum": -53,
+                    "maximum": 53,
+                    "not": {
+                      "const": 0
+                    }
+                  }
+                },
+                "required": [
+                  "weekday"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "by_month_day": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "integer",
+                "minimum": -31,
+                "maximum": 31,
+                "not": {
+                  "const": 0
+                }
+              }
+            },
+            "by_year_day": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "integer",
+                "minimum": -366,
+                "maximum": 366,
+                "not": {
+                  "const": 0
+                }
+              }
+            },
+            "by_week_number": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "integer",
+                "minimum": -53,
+                "maximum": 53,
+                "not": {
+                  "const": 0
+                }
+              }
+            },
+            "by_month": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 12
+              }
+            },
+            "by_set_position": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "integer",
+                "minimum": -366,
+                "maximum": 366,
+                "not": {
+                  "const": 0
+                }
+              }
+            }
+          },
+          "required": [
+            "frequency",
+            "interval",
+            "count",
+            "until",
+            "week_start",
+            "by_second",
+            "by_minute",
+            "by_hour",
+            "by_day",
+            "by_month_day",
+            "by_year_day",
+            "by_week_number",
+            "by_month",
+            "by_set_position"
+          ],
+          "additionalProperties": false
+        },
+        "semantics": {
+          "type": "object",
+          "properties": {
+            "bounded": {
+              "type": "boolean"
+            },
+            "termination": {
+              "enum": [
+                "count",
+                "until",
+                "unbounded"
+              ]
+            }
+          },
+          "required": [
+            "bounded",
+            "termination"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "ok",
+        "operation",
+        "input",
+        "kind",
+        "dialect",
+        "normalized",
+        "capabilities",
+        "diagnostics",
+        "provenance",
+        "value",
+        "semantics"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "const": true
+        },
+        "operation": {
+          "const": "validate"
+        },
+        "input": {
+          "type": "string"
+        },
+        "kind": {
+          "const": "rrule"
+        },
+        "dialect": {
+          "enum": [
+            "rfc5545"
+          ]
+        },
+        "normalized": {
+          "type": "string"
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "diagnostics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "code",
+              "severity",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "severity": {
+                "enum": [
+                  "error",
+                  "warning"
+                ]
+              },
+              "message": {
+                "type": "string"
+              },
+              "span": {
+                "type": "object",
+                "properties": {
+                  "start": {
+                    "type": "integer"
+                  },
+                  "end": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "start",
+                  "end"
+                ],
+                "additionalProperties": false
+              },
+              "expected": {
+                "type": "object"
+              },
+              "details": {
+                "type": "object"
+              },
+              "repair_candidates": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "expression": {
+                      "type": "string"
+                    },
+                    "confidence": {
+                      "type": "number"
+                    },
+                    "reason": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "expression"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "provenance": {
+          "type": "object",
+          "required": [
+            "spec",
+            "compatibility_mode"
+          ],
+          "properties": {
+            "spec": {
+              "type": "string"
+            },
+            "compatibility_mode": {
+              "type": "string"
+            },
+            "timezone_data_version": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "semantics": {
+          "type": "object",
+          "properties": {
+            "bounded": {
+              "type": "boolean"
+            },
+            "termination": {
+              "enum": [
+                "count",
+                "until",
+                "unbounded"
+              ]
+            }
+          },
+          "required": [
+            "bounded",
+            "termination"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "ok",
+        "operation",
+        "input",
+        "kind",
+        "dialect",
+        "normalized",
+        "capabilities",
+        "diagnostics",
+        "provenance",
+        "semantics"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "const": true
+        },
+        "operation": {
+          "const": "interpret"
+        },
+        "input": {
+          "type": "string"
+        },
+        "kind": {
           "const": "semver_range"
         },
         "dialect": {

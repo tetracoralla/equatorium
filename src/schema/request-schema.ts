@@ -330,7 +330,7 @@ export function createAgentRequestSchema(registry: ExpressionRegistry): Schema {
       kind: {
         type: "string",
         enum: kinds,
-        description: "Required for every operation except detect. Map Content-Type to content_type and ISO 8601 duration to iso_duration.",
+        description: "Required for every operation except detect. Map Content-Type to content_type, ISO 8601 duration to iso_duration, and one RFC 5545 RRULE property to rrule.",
       },
       dialect: {
         type: "string",

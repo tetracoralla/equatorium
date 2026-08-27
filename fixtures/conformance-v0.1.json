@@ -62,6 +62,18 @@
     "expected": { "ok": true, "normalized": "P1DT3H" }
   },
   {
+    "id": "rrule-weekly-count",
+    "request": {
+      "op": "interpret",
+      "kind": "rrule",
+      "expression": "RRULE:BYDAY=MO,WE;COUNT=10;FREQ=WEEKLY"
+    },
+    "expected": {
+      "ok": true,
+      "normalized": "RRULE:FREQ=WEEKLY;COUNT=10;BYDAY=MO,WE"
+    }
+  },
+  {
     "id": "unix-permission-symbolic",
     "request": {
       "op": "interpret",
@@ -124,6 +136,15 @@
       "expression": "junkP1D"
     },
     "expected": { "ok": false, "diagnostic_codes": ["E_DURATION_PARSE"] }
+  },
+  {
+    "id": "rrule-duplicate-field-negative",
+    "request": {
+      "op": "interpret",
+      "kind": "rrule",
+      "expression": "RRULE:FREQ=WEEKLY;BYDAY=MO;BYDAY=TU"
+    },
+    "expected": { "ok": false, "diagnostic_codes": ["E_RRULE_FIELD_DUPLICATE"] }
   },
   {
     "id": "permission-negative",

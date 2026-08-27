@@ -900,6 +900,84 @@
           "const": "interpret"
         },
         "kind": {
+          "const": "rrule"
+        },
+        "dialect": {
+          "enum": [
+            "rfc5545"
+          ]
+        },
+        "context": false,
+        "derive": {
+          "type": "array",
+          "maxItems": 0
+        },
+        "query": false,
+        "convert": false
+      },
+      "required": [
+        "op",
+        "kind"
+      ]
+    },
+    {
+      "properties": {
+        "op": {
+          "const": "validate"
+        },
+        "kind": {
+          "const": "rrule"
+        },
+        "dialect": {
+          "enum": [
+            "rfc5545"
+          ]
+        },
+        "context": false,
+        "derive": {
+          "type": "array",
+          "maxItems": 0
+        },
+        "query": false,
+        "convert": false
+      },
+      "required": [
+        "op",
+        "kind"
+      ]
+    },
+    {
+      "properties": {
+        "op": {
+          "const": "normalize"
+        },
+        "kind": {
+          "const": "rrule"
+        },
+        "dialect": {
+          "enum": [
+            "rfc5545"
+          ]
+        },
+        "context": false,
+        "derive": {
+          "type": "array",
+          "maxItems": 0
+        },
+        "query": false,
+        "convert": false
+      },
+      "required": [
+        "op",
+        "kind"
+      ]
+    },
+    {
+      "properties": {
+        "op": {
+          "const": "interpret"
+        },
+        "kind": {
           "const": "semver_range"
         },
         "dialect": {

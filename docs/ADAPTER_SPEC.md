@@ -18,6 +18,7 @@ The shared core validates kind, dialect, structural and byte limits, operation-s
 - Apply the same strict grammar to an expression and to every equivalent query operand; do not let a reused engine coerce alternate spellings on one path.
 - Keep integers and decimals as exact lexical values whenever conversion to a JSON number could round, overflow, or become non-finite.
 - Reject duplicate or otherwise ambiguous source fields before a library parser can collapse them.
+- A structural recurrence adapter must not enumerate an unbounded rule or manufacture missing calendar context; occurrence expansion belongs to a separately bounded scheduling surface.
 - Require explicit context when a result otherwise depends on wall-clock time, timezone, locale, filesystem, network, or process state.
 - Bound every generated collection by `limits.max_output_items`.
 - Treat request size, nesting, collection width, string length, response size, and execution time as cumulative core boundaries, not only expression-local checks.

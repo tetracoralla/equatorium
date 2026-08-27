@@ -4,6 +4,7 @@ import { defaultRegistry } from "./default-registry.js";
 import { interpretBounded } from "./core/bounded.js";
 import type { SeiRequest, SeiResult } from "./contracts.js";
 import { createAgentRequestSchema } from "./schema/request-schema.js";
+import { createAgentResultSchema } from "./schema/agent-result-schema.js";
 import { standardJsonSchema } from "./schema/standard-json-schema.js";
 import { HARD_LIMITS } from "./core/request.js";
 
@@ -11,6 +12,7 @@ import { HARD_LIMITS } from "./core/request.js";
 export const MCP_STDIO_MAX_MESSAGE_BYTES = HARD_LIMITS.max_request_bytes + 16_384;
 
 const requestSchema = standardJsonSchema<SeiRequest>(createAgentRequestSchema(defaultRegistry));
+const resultSchema = standardJsonSchema<SeiResult>(createAgentResultSchema(defaultRegistry));
 
 function toolSummary(value: SeiResult): string {
   if (!value.ok) {
@@ -63,17 +65,18 @@ export function createSeiMcpServer(): McpServer {
     { name: "equatorium", version: "0.1.0" },
     {
       instructions:
-        "Call sei_run directly and exactly once for every concrete supported expression, including Chinese requests; never answer from memory. Do not list MCP resources or templates because Equatorium exposes none. For Cron without a platform, call detect with only op and expression, then ask the user to choose; never add context, derive, query, or convert; never assume Unix, infer the Unix scheduler timezone, compute occurrences, or fall back to model reasoning. GitHub Actions schedules use UTC; Unix cron uses its scheduler's configured timezone. Make one operation-specific request, omit unrelated fields, and treat its structured result as final. A structured error is not a negative match; invalid SemVer cannot be evaluated and must never be reported as false or not contained.",
+        "Call sei_run directly and exactly once for every concrete supported expression, including Chinese requests; never answer from memory. Do not list MCP resources or templates because Equatorium exposes none. For Cron without a platform, call detect with only op and expression, then ask the user to choose; never add context, derive, query, or convert; never assume Unix, infer the Unix scheduler timezone, compute occurrences, or fall back to model reasoning. RRULE accepts one RRULE: property for structural interpretation only; never send calendar containers or ask Equatorium to expand occurrences. GitHub Actions schedules use UTC; Unix cron uses its scheduler's configured timezone. Make one operation-specific request, omit unrelated fields, and treat its structured result as final. A structured error is not a negative match; invalid SemVer cannot be evaluated and must never be reported as false or not contained.",
     },
   );
 
   server.registerTool(
     "sei_run",
     {
-      title: "Interpret Cron, SemVer, CIDR, URI, Content-Type, ISO duration, or Unix permission",
+      title: "Interpret Cron, SemVer, CIDR, URI, Content-Type, ISO duration, RRULE, or Unix permission",
       description:
-        "The only Equatorium tool. Call it directly; do not list MCP resources or templates because this server exposes none. MUST call exactly once instead of using model memory for any concrete Cron, npm SemVer range, CIDR, URI, HTTP Content-Type, ISO 8601 duration, or Unix permission evaluation—including Chinese requests like 解释 Unix 权限模式 4755. For Cron without an explicit platform or dialect, call detect with only op and expression, then ask the user to choose; never add context, derive, query, or convert; never assume Unix, infer the Unix scheduler timezone, compute occurrences, or fall back to model reasoning. GitHub Actions schedules use UTC; Unix cron uses its scheduler's configured timezone. Exact non-Cron pairs: semver_range/npm, cidr/cidr, uri/rfc3986, content_type/http, iso_duration/iso8601-1, unix_permission/posix-mode. Choose one op and omit unrelated fields. Query shape: query: { name, arguments }; npm membership uses arguments.candidate. A completed structured result is final—answer directly without repeated calls or web research unless explicitly requested. A structured error is not a negative match; invalid SemVer cannot be evaluated and must never be reported as false or not contained.",
+        "The only Equatorium tool. Call it directly; do not list MCP resources or templates because this server exposes none. MUST call exactly once instead of using model memory for any concrete Cron, npm SemVer range, CIDR, URI, HTTP Content-Type, ISO 8601 duration, RFC 5545 RRULE, or Unix permission evaluation—including Chinese requests like 解释 Unix 权限模式 4755. For Cron without an explicit platform or dialect, call detect with only op and expression, then ask the user to choose; never add context, derive, query, or convert; never assume Unix, infer the Unix scheduler timezone, compute occurrences, or fall back to model reasoning. RRULE accepts one RRULE: property for structural interpret/validate/normalize only; never send calendar containers, context, query, convert, or derive, and never expand occurrences. GitHub Actions schedules use UTC; Unix cron uses its scheduler's configured timezone. Exact non-Cron pairs: semver_range/npm, cidr/cidr, uri/rfc3986, content_type/http, iso_duration/iso8601-1, rrule/rfc5545, unix_permission/posix-mode. Choose one op and omit unrelated fields. Query shape: query: { name, arguments }; npm membership uses arguments.candidate. A completed structured result is final—answer directly without repeated calls or web research unless explicitly requested. A structured error is not a negative match; invalid SemVer cannot be evaluated and must never be reported as false or not contained.",
       inputSchema: requestSchema,
+      outputSchema: resultSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,

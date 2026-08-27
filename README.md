@@ -8,6 +8,7 @@ Equatorium is a deterministic Standard Expression Interpreter (SEI): it turns sp
 - RFC 3986 URIs with an explicit scheme, including optional fragments;
 - HTTP Content-Type values;
 - ISO 8601 durations in the declared strict subset;
+- single-line RFC 5545 RRULE properties without occurrence expansion;
 - octal and symbolic Unix permission modes.
 
 Equatorium owns the registry, request/result envelope, limits, diagnostics, canonicalization policy, capability discovery, and thin Agent transports. Mature packages own the domain parsing wherever an appropriate engine exists.
@@ -110,6 +111,7 @@ generated from those same live contracts; schema drift or a mistyped result fail
 - Invalid input is never repaired during normalization. Repairs belong in diagnostics, not hidden mutation.
 - Normalization is idempotent and preserves the adapter's declared semantics.
 - ISO duration components are JSON decimal strings so values larger or more precise than IEEE-754 numbers remain exact.
+- RRULE accepts one explicit `RRULE:` property only. It rejects calendar containers, duplicate or unknown fields, unsupported date-only `UNTIL`, invalid field combinations, and cumulative `BY*` list overflow before the reused parser runs. It returns structural recurrence fields and boundedness only; it never expands occurrences or supplies time-zone context.
 - Week notation cannot be mixed with any other explicitly present duration unit, including zero-valued tokens such as `P0W1D`.
 - Strict CIDR input and CIDR query operands share one grammar; IPv4 requires four decimal octets without leading zeros.
 - Scheme-qualified URI expressions and URI query operands share a strict RFC 3986 lexical/component validator. Spaces, malformed IP literals, and invalid percent escapes are errors rather than implicit repairs.
@@ -119,7 +121,7 @@ generated from those same live contracts; schema drift or a mistyped result fail
 - Four-digit Unix modes such as `4755` remain ambiguous with integers during detection, but are now surfaced as supported `unix_permission` candidates instead of being missed.
 - CLI batches are independent, ordered, and retain per-item failures.
 - MCP does not add a second semantic path: its flat host-compatible Schema is mechanically projected from the same Registry contracts, while the worker-bounded core applies the complete conditional request contract. Full results live only in `structuredContent`; the text carrier is a bounded summary.
-- Seven Chinese request fixtures exercise all current adapters as deterministic MCP transport-conformance tests. They do not claim to prove model tool selection; installed-plugin cold-start routing must be tested separately in a genuinely new Codex task.
+- Eight Chinese request fixtures exercise all current adapters as deterministic MCP transport-conformance tests. They do not claim to prove model tool selection; installed-plugin cold-start routing must be tested separately in a genuinely new Codex task.
 
 See [the result contract](docs/CONTRACT.md), [adapter specification](docs/ADAPTER_SPEC.md), and [product model](docs/PRODUCT_MODEL.md).
 

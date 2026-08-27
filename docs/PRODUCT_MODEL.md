@@ -25,9 +25,10 @@ Equatorium is the product identity. SEI v1 is its stable Standard Expression Int
 | URI | RFC 3986 lexical/component gate plus `uri-js` | strict scheme-qualified/reference validation before normalization, component IR |
 | content type | `content-type` | case-insensitive duplicate rejection before parsing, canonical parameter ordering, media-type IR |
 | ISO duration | `iso8601-duration` plus exact lexical wrapper | strict supported grammar, unrounded decimal-string components, canonical component form |
+| RFC 5545 RRULE | `rrule` plus strict lexical and semantic gate | one `RRULE:` property, typed recurrence fields, boundedness, no occurrence expansion |
 | Unix permission | local bounded parser | octal/symbolic equivalence and permission query |
 
-RRULE, regex, glob, and a general-purpose expression language are not part of v0.1. The Agent-facing addition remains a thin stdio MCP transport plus one concise Skill; neither owns semantics or a parallel request shape.
+ICS containers, recurrence expansion, regex, glob, and a general-purpose expression language are not part of v0.1. RRULE support interprets only one explicit property and deliberately excludes `DTSTART`, `RDATE`, `EXDATE`, `VEVENT`, horizons, time zones, and occurrence queries. The Agent-facing addition remains a thin stdio MCP transport plus one concise Skill; neither owns semantics or a parallel request shape.
 
 ## Human interface contract
 
