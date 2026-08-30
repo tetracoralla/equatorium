@@ -18,6 +18,7 @@ export const FIELD_LABELS = {
   timezone: "时区",
   reference_time: "参考时间",
   count: "返回数量",
+  rrule_count: "重复次数",
   candidate: "候选值",
   include_prerelease: "包含预发布版本",
   range: "另一个版本范围",
@@ -109,12 +110,30 @@ export const FIELD_LABELS = {
 export const VALUE_LABELS = {
   family: { ipv4: "IPv4", ipv6: "IPv6" },
   day_of_month_day_of_week_relation: { or: "任一条件满足即可" },
+  frequency: {
+    YEARLY: "每年",
+    MONTHLY: "每月",
+    WEEKLY: "每周",
+    DAILY: "每天",
+    HOURLY: "每小时",
+    MINUTELY: "每分钟",
+    SECONDLY: "每秒",
+  },
+  week_start: { MO: "周一", TU: "周二", WE: "周三", TH: "周四", FR: "周五", SA: "周六", SU: "周日" },
+  weekday: { MO: "周一", TU: "周二", WE: "周三", TH: "周四", FR: "周五", SA: "周六", SU: "周日" },
   termination: { count: "次数", until: "截止时间", unbounded: "无界" },
 };
 
 export const DIAGNOSTIC_MESSAGES = {
   E_CRON_GITHUB_MIN_INTERVAL: "GitHub Actions 的定时间隔不能短于 5 分钟。",
   E_CRON_GITHUB_SYNTAX: "这不是 GitHub Actions 支持的五段 Cron 写法。",
+  E_RRULE_PARSE: "这不是受支持的单行 RRULE 写法；请保留 RRULE: 并检查字段格式。",
+  E_RRULE_VALUE_RANGE: "RRULE 中有超出允许范围的数字或无效日期。",
+  E_RRULE_LIST_LIMIT: "RRULE 的字段或 BY* 值过多；请减少筛选项。",
+  E_RRULE_DUPLICATE_VALUE: "RRULE 的 BY* 列表中有重复值；请删除重复项。",
+  E_RRULE_CONFLICT: "RRULE 中有不能同时使用的字段；例如 COUNT 与 UNTIL 只能选择一个。",
+  E_RRULE_FIELD_UNKNOWN: "RRULE 包含当前不支持的字段。",
+  E_RRULE_FIELD_DUPLICATE: "RRULE 中同一字段出现了多次；请只保留一项。",
   W_CRON_DOM_DOW_OR: "日期和星期都有限制时，满足任一条件就会运行。",
   W_CRON_PLATFORM_QUERY_LIMITED: "当前只能按 UTC 计算 GitHub Actions 的执行时间。",
   W_CIDR_HOST_BITS_CLEARED: "输入包含主机位；标准写法已归到对应网络地址。",

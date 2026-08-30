@@ -61,7 +61,7 @@ export function meaningEntries(result) {
   if (result.kind === "rrule") {
     entries = entries.filter(([, value]) =>
       value !== null && (!Array.isArray(value) || value.length > 0)
-    );
+    ).map(([key, value]) => [key === "count" ? "rrule_count" : key, value]);
   }
   if (typeof result.semantics === "object" && result.semantics !== null) {
     const existing = new Set(entries.map(([key]) => key));

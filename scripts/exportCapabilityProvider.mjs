@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { createRequestSchema, createResultSchema, defaultRegistry } from '../src/index.js'
 import { createAgentRequestSchema } from '../src/schema/request-schema.js'
+import { createAgentResultSchema } from '../src/schema/agent-result-schema.js'
 import {
   canonicalJson,
   connectEquatoriumClient,
@@ -76,10 +77,20 @@ const client = await connectEquatoriumClient('equatorium-capability-export')
 try {
   const tool = await readSeiRunTool(client)
   const liveTransportInput = tool.inputSchema
+  const liveTransportOutput = tool.outputSchema
+  assert.ok(
+    liveTransportOutput,
+    'sei_run must advertise an output schema for transport binding',
+  )
   assert.equal(
     canonicalJson(liveTransportInput),
     canonicalJson(createAgentRequestSchema(defaultRegistry)),
     'sei_run advertised input schema differs from the live Agent schema projection',
+  )
+  assert.equal(
+    canonicalJson(liveTransportOutput),
+    canonicalJson(createAgentResultSchema(defaultRegistry)),
+    'sei_run advertised output schema differs from the live Agent schema projection',
   )
 
   const manifest = {
@@ -105,6 +116,11 @@ try {
             target: 'scripts/runCapabilityAdapter.mjs#run',
           },
         ],
+        transportSchemaProbe: {
+          protocol: 'openadam.transport-schema-jsonl.v0.1',
+          command: 'node',
+          args: ['scripts/runTransportSchemaProbe.mjs'],
+        },
         bindings: [
           {
             operationId: 'run',
@@ -116,6 +132,7 @@ try {
             },
             transportSchemaDigests: {
               input: schemaDigest(liveTransportInput),
+              output: schemaDigest(liveTransportOutput),
             },
             annotations: tool.annotations ?? {},
           },

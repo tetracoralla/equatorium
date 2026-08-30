@@ -46,7 +46,7 @@
     "postbuild": "node scripts/build-plugin.mjs",
     "check": "npm run typecheck && npm run test && npm run check:schemas && npm run check:safety && npm run check:release && npm run build && npm run check:capabilities && npm run check:agent && npm run check:package",
     "check:agent": "node scripts/check-agent-surface.mjs",
-    "check:capabilities": "node --import tsx scripts/exportCapabilityProvider.mjs --check",
+    "check:capabilities": "node --import tsx scripts/exportCapabilityProvider.mjs --check && node scripts/runTransportSchemaProbe.mjs --check",
     "check:package": "node scripts/check-package-install.mjs",
     "check:release": "node scripts/check-release-hygiene.mjs",
     "check:safety": "node scripts/check-safety.mjs",

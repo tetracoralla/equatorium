@@ -23,6 +23,13 @@
           "target": "scripts/runCapabilityAdapter.mjs#run"
         }
       ],
+      "transportSchemaProbe": {
+        "protocol": "openadam.transport-schema-jsonl.v0.1",
+        "command": "node",
+        "args": [
+          "scripts/runTransportSchemaProbe.mjs"
+        ]
+      },
       "bindings": [
         {
           "operationId": "run",
@@ -33,7 +40,8 @@
             "output": "sha256:5cf3c45b8fb28e64cb7cc55c17a25f1ee7f6950fb6729af64147a2f0a891634c"
           },
           "transportSchemaDigests": {
-            "input": "sha256:23e5211e4ab70aaa5a86789f035f35737b1420c190daa11892c36b0bcd526d8a"
+            "input": "sha256:23e5211e4ab70aaa5a86789f035f35737b1420c190daa11892c36b0bcd526d8a",
+            "output": "sha256:b9fae7bfbbe6f92ce13aa0c1ea7d15713f987e4546fe2d771e1baf23a644d2e5"
           },
           "annotations": {
             "readOnlyHint": true,
