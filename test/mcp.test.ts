@@ -1,6 +1,6 @@
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
 import { describe, expect, it } from "vitest";
-import { createAgentRequestSchema, defaultRegistry } from "../src/index.js";
+import { createAgentRequestSchema, createAgentResultSchema, defaultRegistry } from "../src/index.js";
 import { createSeiMcpServer } from "../src/mcp.js";
 
 async function connectedMcp(): Promise<{
@@ -24,7 +24,7 @@ async function connectedMcp(): Promise<{
 }
 
 describe("MCP Agent surface", () => {
-  it("exposes one read-only tool with a host-compatible typed request schema", async () => {
+  it("exposes one read-only tool with compact, typed input and output catalogs", async () => {
     const mcp = await connectedMcp();
     try {
       const { tools } = await mcp.client.listTools();
@@ -45,9 +45,22 @@ describe("MCP Agent surface", () => {
       expect(run?.description).toContain("解释 Unix 权限模式 4755");
       expect(run?.description).toContain("cidr/cidr");
       expect(run?.description).toContain("unix_permission/posix-mode");
+      expect(run?.description).toContain("rrule/rfc5545");
       expect(run?.description).toContain("completed structured result is final");
       expect(run?.inputSchema).toEqual(createAgentRequestSchema(defaultRegistry));
+      expect(run?.outputSchema).toEqual(createAgentResultSchema(defaultRegistry));
       expect(JSON.stringify(run?.inputSchema)).not.toContain('"oneOf"');
+      expect(run?.outputSchema).toMatchObject({
+        required: ["schema_version", "ok", "operation", "input", "diagnostics"],
+        additionalProperties: false,
+        properties: {
+          ok: { type: "boolean" },
+          operation: { enum: expect.arrayContaining(["interpret", "query", "detect"]) },
+          diagnostics: { type: "array" },
+          query_name: { enum: expect.arrayContaining(["matches", "next_occurrences"]) },
+        },
+      });
+      expect(Buffer.byteLength(JSON.stringify(run?.outputSchema), "utf8")).toBeLessThan(8_192);
       expect(run?.inputSchema).toMatchObject({
         description: expect.stringContaining("detect accepts only op and expression"),
         properties: {

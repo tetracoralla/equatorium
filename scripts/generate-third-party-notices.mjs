@@ -1,6 +1,10 @@
 import { readFile, readdir, realpath, writeFile } from "node:fs/promises";
 import { relative, resolve, sep } from "node:path";
 
+function compareCodeUnits(left, right) {
+  return left < right ? -1 : left > right ? 1 : 0;
+}
+
 function packageRootFromInput(repositoryRoot, inputPath) {
   const normalized = relative(repositoryRoot, resolve(repositoryRoot, inputPath)).split(sep).join("/");
   const marker = "node_modules/";
@@ -21,7 +25,7 @@ async function licenseFiles(packageRoot) {
   return entries
     .filter((entry) => entry.isFile() && /^(?:licen[cs]e|copying)(?:\..+)?$/iu.test(entry.name))
     .map((entry) => entry.name)
-    .sort((left, right) => left.localeCompare(right));
+    .sort(compareCodeUnits);
 }
 
 export async function writeThirdPartyNotices({ repositoryRoot, bundledInputs, outputPaths }) {
@@ -60,7 +64,13 @@ export async function writeThirdPartyNotices({ repositoryRoot, bundledInputs, ou
       }))),
     });
   }
-  packages.sort((left, right) => `${left.name}@${left.version}`.localeCompare(`${right.name}@${right.version}`));
+  packages.sort((left, right) => compareCodeUnits(
+    `${left.name}@${left.version}`,
+    `${right.name}@${right.version}`,
+  ));
+  if (packages.length === 0) {
+    throw new Error("The standalone plugin bundle contains no attributable third-party packages.");
+  }
 
   const sections = packages.map((item) => [
     `## ${item.name}@${item.version}`,

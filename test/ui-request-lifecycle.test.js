@@ -52,6 +52,17 @@ describe("human UI request lifecycle", () => {
       kind: "iso_duration",
       value: { years: "0", days: "1", hours: "2", minutes: "30", seconds: "0" },
     });
+    const rrule = meaningEntries({
+      kind: "rrule",
+      value: {
+        frequency: "MONTHLY",
+        count: 12,
+        until: null,
+        by_day: [{ weekday: "MO", ordinal: 1 }],
+        by_month: [],
+      },
+      semantics: { bounded: true, termination: "count" },
+    });
 
     expect(cron).toEqual([
       ["minute", { type: "set", values: [0] }],
@@ -59,7 +70,16 @@ describe("human UI request lifecycle", () => {
       ["day_of_month_day_of_week_relation", "or"],
     ]);
     expect(duration).toEqual([["days", "1"], ["hours", "2"], ["minutes", "30"]]);
+    expect(rrule).toEqual([
+      ["frequency", "MONTHLY"],
+      ["rrule_count", 12],
+      ["by_day", [{ weekday: "MO", ordinal: 1 }]],
+      ["bounded", true],
+      ["termination", "count"],
+    ]);
     expect(displayValue("or", "day_of_month_day_of_week_relation")).toBe("任一条件满足即可");
+    expect(displayValue("MONTHLY", "frequency")).toBe("每月");
+    expect(displayValue({ weekday: "MO", ordinal: 1 })).toBe("星期：周一；序数：1");
   });
 
   it("uses deterministic local messages for user-facing diagnostics", () => {
@@ -67,5 +87,9 @@ describe("human UI request lifecycle", () => {
       code: "W_DURATION_CALENDAR_CONTEXT",
       message: "English fallback",
     })).toBe("年和月取决于具体日历，不能直接换算成固定秒数。");
+    expect(diagnosticMessage({
+      code: "E_RRULE_CONFLICT",
+      message: "COUNT and UNTIL cannot appear in the same RRULE.",
+    })).toBe("RRULE 中有不能同时使用的字段；例如 COUNT 与 UNTIL 只能选择一个。");
   });
 });

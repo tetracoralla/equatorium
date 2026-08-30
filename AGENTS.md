@@ -1,8 +1,14 @@
 # Equatorium repository contract
 
-Read `docs/PRODUCT_MODEL.md`, `docs/CONTRACT.md`, `docs/ADAPTER_SPEC.md`, and
-`capabilities/README.md` before changing the product, registry, schemas, plugin,
-or capability adapter.
+Read `docs/PRODUCT_MODEL.md`, `docs/CONTRACT.md`, `docs/ADAPTER_SPEC.md`,
+`docs/REVIEW_CONTRACT.md`, and `capabilities/README.md` before changing the
+product, registry, schemas, plugin, or capability adapter.
+
+A plain owner request to review, audit, 审核, or 复核 automatically invokes the
+complete review contract in read-only mode unless fixes are also requested.
+Treat it as the minimum scope, not a ceiling, and finish with `tools-dev
+workspace escalations` for shared contracts, installation, or resource risks;
+do not ask the owner to supply a separate checklist.
 
 - Use `build-agent-native-utilities` as the owning method for Equatorium. Use
   `build-capability-contracts` only for the canonical Profile, provider
@@ -13,7 +19,10 @@ or capability adapter.
 - Reuse mature parsers and retain strict lexical gates, explicit dialect and
   time context, typed diagnostics, bounded complete results, terminable worker
   execution, and request/result correlation.
-- The current standard-expression Profile is provider-seeded experimental. It
+- The active standard-expression Profile is
+  `org.openadam.standard-expression.run@0.2.0`; `0.1.0` is retained with its
+  original carrier-polluted error boundary. The active Profile is
+  provider-seeded experimental. It
   excludes provider execution limits, carrier versions, UI, registry discovery,
   and engine/runtime identity; do not claim cross-provider substitution.
 - Keep the human UI to the current understand-and-copy task. Agent schemas,

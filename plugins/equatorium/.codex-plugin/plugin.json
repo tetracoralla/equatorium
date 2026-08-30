@@ -1,6 +1,6 @@
 {
   "name": "equatorium",
-  "version": "0.1.0+codex.20260819120734",
+  "version": "0.1.0+codex.20260830171215",
   "description": "Equatorium deterministically interprets specification-dense standard expressions for Codex.",
   "author": {
     "name": "openAdam",
@@ -11,13 +11,15 @@
     "cron",
     "semver",
     "cidr",
-    "uri"
+    "uri",
+    "rrule",
+    "icalendar"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Equatorium",
     "shortDescription": "Interpret standard expressions deterministically.",
-    "longDescription": "Give Codex one complete read-only Equatorium tool for bounded interpretation across Cron, SemVer ranges, CIDR, RFC 3986 URI, Content-Type, ISO duration, and Unix permission expressions.",
+    "longDescription": "Give Codex one complete read-only Equatorium tool for bounded interpretation across Cron, SemVer ranges, CIDR, RFC 3986 URI, Content-Type, ISO duration, RFC 5545 RRULE, and Unix permission expressions.",
     "developerName": "openAdam",
     "category": "Productivity",
     "capabilities": [
@@ -26,7 +28,7 @@
     "defaultPrompt": [
       "\u89e3\u91ca\u8fd9\u4e2a Cron \u8868\u8fbe\u5f0f\u63a5\u4e0b\u6765\u4f55\u65f6\u8fd0\u884c\u3002",
       "\u5224\u65ad\u8fd9\u4e2a\u7248\u672c\u662f\u5426\u6ee1\u8db3\u7ed9\u5b9a\u7684 SemVer \u8303\u56f4\u3002",
-      "\u89e3\u91ca\u8fd9\u4e2a CIDR\u3001URI\u3001Content-Type\u3001ISO \u65f6\u957f\u6216 Unix \u6743\u9650\u3002"
+      "\u89e3\u91ca\u8fd9\u4e2a CIDR\u3001URI\u3001Content-Type\u3001ISO \u65f6\u957f\u3001RRULE \u6216 Unix \u6743\u9650\u3002"
     ]
   },
   "mcpServers": "./.mcp.json"

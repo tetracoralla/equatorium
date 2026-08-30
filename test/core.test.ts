@@ -12,12 +12,13 @@ function expectSuccess(result: SeiResult): asserts result is Extract<SeiResult, 
 }
 
 describe("registry and core envelope", () => {
-  it("registers the seven P0 expression kinds", () => {
+  it("registers the eight expression kinds", () => {
     expect(defaultRegistry.list().map((item) => item.kind)).toEqual([
       "cidr",
       "content_type",
       "cron",
       "iso_duration",
+      "rrule",
       "semver_range",
       "unix_permission",
       "uri",

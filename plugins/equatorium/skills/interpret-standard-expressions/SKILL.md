@@ -1,6 +1,6 @@
 ---
 name: interpret-standard-expressions
-description: Call Equatorium sei_run directly and exactly once for any concrete Cron, npm SemVer range, CIDR, RFC 3986 URI, HTTP Content-Type, ISO 8601 duration, or Unix permission task, including Chinese requests such as “解释 Unix 权限模式 4755”. Do not list MCP resources or templates; Equatorium exposes none. For Cron without a named platform or dialect, call op detect with only op and expression, then ask the user to choose; never add context, derive, query, or convert; never assume Unix, infer the Unix scheduler timezone, compute occurrences, or fall back to model reasoning.
+description: Call Equatorium sei_run directly and exactly once for any concrete Cron, npm SemVer range, CIDR, RFC 3986 URI, HTTP Content-Type, ISO 8601 duration, RFC 5545 RRULE, or Unix permission task, including Chinese requests such as “解释 Unix 权限模式 4755”. Do not list MCP resources or templates; Equatorium exposes none. For Cron without a named platform or dialect, call op detect with only op and expression, then ask the user to choose; never add context, derive, query, or convert; never assume Unix, infer the Unix scheduler timezone, compute occurrences, or fall back to model reasoning.
 ---
 
 # Interpret Standard Expressions with Equatorium
@@ -16,7 +16,8 @@ Use the deterministic runtime for every concrete supported expression, even when
 ## Build the request
 
 - Preserve `expression`; set known `kind` and `dialect`; omit unrelated fields. Cron dialects are not interchangeable. Supply context that changes meaning, especially `reference_time` and `timezone`, without inventing it.
-- Use exact non-Cron pairs: `semver_range/npm`, `cidr/cidr`, `uri/rfc3986`, `content_type/http`, `iso_duration/iso8601-1`, and `unix_permission/posix-mode`.
+- Use exact non-Cron pairs: `semver_range/npm`, `cidr/cidr`, `uri/rfc3986`, `content_type/http`, `iso_duration/iso8601-1`, `rrule/rfc5545`, and `unix_permission/posix-mode`.
+- RRULE supports only one explicit `RRULE:` property with structural `interpret`, `validate`, or `normalize`. Do not send `DTSTART`, `RDATE`, `EXDATE`, `VEVENT`, context, query, convert, or derive fields, and do not use Equatorium to expand occurrences.
 - Every query uses `query: { name, arguments }`. npm membership is `op: "query"`, `kind: "semver_range"`, `dialect: "npm"`, and `query: { name: "matches", arguments: { candidate: <version> } }`.
 
 ## Present the result

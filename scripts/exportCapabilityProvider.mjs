@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { createRequestSchema, createResultSchema, defaultRegistry } from '../src/index.js'
 import { createAgentRequestSchema } from '../src/schema/request-schema.js'
+import { createAgentResultSchema } from '../src/schema/agent-result-schema.js'
 import {
   canonicalJson,
   connectEquatoriumClient,
@@ -76,14 +77,24 @@ const client = await connectEquatoriumClient('equatorium-capability-export')
 try {
   const tool = await readSeiRunTool(client)
   const liveTransportInput = tool.inputSchema
+  const liveTransportOutput = tool.outputSchema
+  assert.ok(
+    liveTransportOutput,
+    'sei_run must advertise an output schema for transport binding',
+  )
   assert.equal(
     canonicalJson(liveTransportInput),
     canonicalJson(createAgentRequestSchema(defaultRegistry)),
     'sei_run advertised input schema differs from the live Agent schema projection',
   )
+  assert.equal(
+    canonicalJson(liveTransportOutput),
+    canonicalJson(createAgentResultSchema(defaultRegistry)),
+    'sei_run advertised output schema differs from the live Agent schema projection',
+  )
 
   const manifest = {
-    schemaVersion: 'openadam.provider-manifest.v0.1',
+    schemaVersion: 'openadam.provider-manifest.v0.3',
     provider: {
       id: 'org.openadam.equatorium',
       name: 'Equatorium',
@@ -92,11 +103,23 @@ try {
     implementations: [
       {
         capabilityId: 'org.openadam.standard-expression.run',
-        capabilityVersion: '0.1.0',
+        capabilityVersion: '0.2.0',
+        profileDigest: 'sha256:880f631de0921b5093fe8357b0138fd8e6459ca80a44a2894e15d3db2159b2b5',
         adapter: {
           protocol: 'openadam.capability-jsonl.v0.1',
           command: 'node',
           args: ['scripts/runCapabilityAdapter.mjs'],
+        },
+        adapterBindings: [
+          {
+            operationId: 'run',
+            target: 'scripts/runCapabilityAdapter.mjs#run',
+          },
+        ],
+        transportSchemaProbe: {
+          protocol: 'openadam.transport-schema-jsonl.v0.1',
+          command: 'node',
+          args: ['scripts/runTransportSchemaProbe.mjs'],
         },
         bindings: [
           {
@@ -109,6 +132,7 @@ try {
             },
             transportSchemaDigests: {
               input: schemaDigest(liveTransportInput),
+              output: schemaDigest(liveTransportOutput),
             },
             annotations: tool.annotations ?? {},
           },

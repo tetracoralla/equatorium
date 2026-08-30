@@ -108,7 +108,7 @@ export interface SeiSuccessBase {
   diagnostics: Diagnostic[];
   provenance?: Provenance;
   value?: KindValueMap[SupportedKind];
-  semantics?: CronSemantics;
+  semantics?: CronSemantics | RruleSemantics;
   derived?: CronDerived;
   query_name?: KnownQueryName;
   query_result?: KnownQueryResult;
@@ -136,6 +136,7 @@ export type SupportedKind =
   | "uri"
   | "content_type"
   | "iso_duration"
+  | "rrule"
   | "unix_permission";
 
 export interface CronAnyField extends JsonObject {
@@ -229,6 +230,33 @@ export interface IsoDurationValue extends JsonObject {
   seconds: string;
 }
 
+export interface RruleDay extends JsonObject {
+  weekday: "MO" | "TU" | "WE" | "TH" | "FR" | "SA" | "SU";
+  ordinal?: number;
+}
+
+export interface RruleValue extends JsonObject {
+  frequency: "YEARLY" | "MONTHLY" | "WEEKLY" | "DAILY" | "HOURLY" | "MINUTELY" | "SECONDLY";
+  interval: number;
+  count: number | null;
+  until: string | null;
+  week_start: "MO" | "TU" | "WE" | "TH" | "FR" | "SA" | "SU";
+  by_second: number[];
+  by_minute: number[];
+  by_hour: number[];
+  by_day: RruleDay[];
+  by_month_day: number[];
+  by_year_day: number[];
+  by_week_number: number[];
+  by_month: number[];
+  by_set_position: number[];
+}
+
+export interface RruleSemantics extends JsonObject {
+  bounded: boolean;
+  termination: "count" | "until" | "unbounded";
+}
+
 export interface PermissionBits extends JsonObject {
   read: boolean;
   write: boolean;
@@ -253,6 +281,7 @@ export interface KindValueMap {
   uri: UriValue;
   content_type: ContentTypeValue;
   iso_duration: IsoDurationValue;
+  rrule: RruleValue;
   unix_permission: UnixPermissionValue;
 }
 
@@ -263,10 +292,11 @@ export interface KindDialectMap {
   uri: "rfc3986";
   content_type: "http";
   iso_duration: "iso8601-1";
+  rrule: "rfc5545";
   unix_permission: "posix-mode";
 }
 
-type NonCronKind = Exclude<SupportedKind, "cron">;
+type NonSemanticKind = Exclude<SupportedKind, "cron" | "rrule">;
 
 export type SeiValueSuccess =
   | (SeiSuccessBase & {
@@ -280,8 +310,18 @@ export type SeiValueSuccess =
       capabilities: string[];
       provenance: Provenance;
     })
+  | (SeiSuccessBase & {
+      operation: "interpret" | "normalize";
+      kind: "rrule";
+      dialect: "rfc5545";
+      normalized: string;
+      value: RruleValue;
+      semantics: RruleSemantics;
+      capabilities: string[];
+      provenance: Provenance;
+    })
   | {
-      [Kind in NonCronKind]: SeiSuccessBase & {
+      [Kind in NonSemanticKind]: SeiSuccessBase & {
         operation: "interpret" | "normalize";
         kind: Kind;
         dialect: KindDialectMap[Kind];
@@ -290,7 +330,7 @@ export type SeiValueSuccess =
         capabilities: string[];
         provenance: Provenance;
       };
-    }[NonCronKind];
+    }[NonSemanticKind];
 
 export type SeiValidateSuccess =
   | (SeiSuccessBase & {
@@ -303,8 +343,17 @@ export type SeiValidateSuccess =
       capabilities: string[];
       provenance: Provenance;
     })
+  | (SeiSuccessBase & {
+      operation: "validate";
+      kind: "rrule";
+      dialect: "rfc5545";
+      normalized: string;
+      semantics: RruleSemantics;
+      capabilities: string[];
+      provenance: Provenance;
+    })
   | {
-      [Kind in NonCronKind]: SeiSuccessBase & {
+      [Kind in NonSemanticKind]: SeiSuccessBase & {
         operation: "validate";
         kind: Kind;
         dialect: KindDialectMap[Kind];
@@ -312,7 +361,7 @@ export type SeiValidateSuccess =
         capabilities: string[];
         provenance: Provenance;
       };
-    }[NonCronKind];
+    }[NonSemanticKind];
 
 export interface CronMatchesResult extends JsonObject {
   matches: boolean;

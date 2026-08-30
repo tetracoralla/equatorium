@@ -137,6 +137,30 @@
       }
     },
     {
+      "id": "rrule-interpret",
+      "user_task": "按 RFC 5545 解释 RRULE:FREQ=WEEKLY;COUNT=10;BYDAY=MO,WE，但不要展开日期。",
+      "tool": "sei_run",
+      "request": {
+        "op": "interpret",
+        "kind": "rrule",
+        "dialect": "rfc5545",
+        "expression": "RRULE:FREQ=WEEKLY;COUNT=10;BYDAY=MO,WE"
+      },
+      "expected": {
+        "ok": true,
+        "operation": "interpret",
+        "kind": "rrule",
+        "dialect": "rfc5545",
+        "normalized": "RRULE:FREQ=WEEKLY;COUNT=10;BYDAY=MO,WE",
+        "value": {
+          "frequency": "WEEKLY",
+          "count": 10,
+          "by_day": [{ "weekday": "MO" }, { "weekday": "WE" }]
+        },
+        "semantics": { "bounded": true, "termination": "count" }
+      }
+    },
+    {
       "id": "unix-permission-special-mode",
       "user_task": "把 Unix 权限 4755 转成 symbolic，并保留 setuid 语义。",
       "tool": "sei_run",

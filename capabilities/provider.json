@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "openadam.provider-manifest.v0.1",
+  "schemaVersion": "openadam.provider-manifest.v0.3",
   "provider": {
     "id": "org.openadam.equatorium",
     "name": "Equatorium",
@@ -8,12 +8,26 @@
   "implementations": [
     {
       "capabilityId": "org.openadam.standard-expression.run",
-      "capabilityVersion": "0.1.0",
+      "capabilityVersion": "0.2.0",
+      "profileDigest": "sha256:880f631de0921b5093fe8357b0138fd8e6459ca80a44a2894e15d3db2159b2b5",
       "adapter": {
         "protocol": "openadam.capability-jsonl.v0.1",
         "command": "node",
         "args": [
           "scripts/runCapabilityAdapter.mjs"
+        ]
+      },
+      "adapterBindings": [
+        {
+          "operationId": "run",
+          "target": "scripts/runCapabilityAdapter.mjs#run"
+        }
+      ],
+      "transportSchemaProbe": {
+        "protocol": "openadam.transport-schema-jsonl.v0.1",
+        "command": "node",
+        "args": [
+          "scripts/runTransportSchemaProbe.mjs"
         ]
       },
       "bindings": [
@@ -22,11 +36,12 @@
           "transport": "mcp-tool",
           "target": "sei_run",
           "contractSchemaDigests": {
-            "input": "sha256:f53cdfe3aa082a7bb98d4e7e60403fad5c19e1277408eda2ea31ae314974e7ff",
-            "output": "sha256:b99be6f649e0d5ab347076e4d2d074ddc3a5d7cd198aef91a15812534c25a5b2"
+            "input": "sha256:76fa09b9a274a464e0fdcc9c930ea2c0153939f09cc4ca48a29b5867d56c5222",
+            "output": "sha256:5cf3c45b8fb28e64cb7cc55c17a25f1ee7f6950fb6729af64147a2f0a891634c"
           },
           "transportSchemaDigests": {
-            "input": "sha256:257e6a6a2d86452235a129296525c1575eaba9e3b47c39346f0b62ae695bf954"
+            "input": "sha256:23e5211e4ab70aaa5a86789f035f35737b1420c190daa11892c36b0bcd526d8a",
+            "output": "sha256:b9fae7bfbbe6f92ce13aa0c1ea7d15713f987e4546fe2d771e1baf23a644d2e5"
           },
           "annotations": {
             "readOnlyHint": true,

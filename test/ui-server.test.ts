@@ -36,7 +36,7 @@ describe("local human interface", () => {
     const response = await fetch(`${baseUrl}/api/registry`);
     const body = await response.json() as { adapters: Array<{ kind: string }> };
     expect(body.adapters.map((adapter) => adapter.kind)).toEqual(expect.arrayContaining([
-      "cron", "semver_range", "cidr", "uri", "content_type", "iso_duration", "unix_permission",
+      "cron", "semver_range", "cidr", "uri", "content_type", "iso_duration", "rrule", "unix_permission",
     ]));
   });
 
@@ -64,6 +64,30 @@ describe("local human interface", () => {
     });
     expect(extraField.status).toBe(400);
     expect(await extraField.json()).toMatchObject({ error: expect.stringContaining("agent_result") });
+  });
+
+  it("recovers from invalid RRULE input on the same bounded UI route", async () => {
+    const evaluate = async (expression: string) => {
+      const response = await fetch(`${baseUrl}/api/evaluate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          request: { op: "interpret", kind: "rrule", expression },
+        }),
+      });
+      expect(response.status).toBe(200);
+      return response.json() as Promise<{ result: Record<string, unknown> }>;
+    };
+    expect(await evaluate("RRULE:FREQ=WEEKLY;BYDAY=MO;BYDAY=TU")).toMatchObject({
+      result: { ok: false, diagnostics: [{ code: "E_RRULE_FIELD_DUPLICATE" }] },
+    });
+    expect(await evaluate("RRULE:FREQ=WEEKLY;COUNT=10;BYDAY=MO,WE")).toMatchObject({
+      result: {
+        ok: true,
+        normalized: "RRULE:FREQ=WEEKLY;COUNT=10;BYDAY=MO,WE",
+        semantics: { bounded: true, termination: "count" },
+      },
+    });
   });
 
   it("rejects bodies beyond the interface ingress ceiling", async () => {

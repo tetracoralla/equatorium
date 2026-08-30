@@ -22,6 +22,26 @@ describe("CLI runtime", () => {
     expect(child.stderr).toBe("");
   });
 
+  it("interprets an RRULE structurally without schedule expansion", () => {
+    const child = spawnSync(process.execPath, ["--import", "tsx", cli], {
+      cwd: new URL("..", import.meta.url),
+      input: JSON.stringify({
+        op: "interpret",
+        kind: "rrule",
+        expression: "RRULE:FREQ=WEEKLY;COUNT=10;BYDAY=MO,WE",
+      }),
+      encoding: "utf8",
+    });
+    expect(child.status).toBe(0);
+    expect(JSON.parse(child.stdout)).toMatchObject({
+      ok: true,
+      kind: "rrule",
+      normalized: "RRULE:FREQ=WEEKLY;COUNT=10;BYDAY=MO,WE",
+      semantics: { bounded: true, termination: "count" },
+    });
+    expect(child.stderr).toBe("");
+  });
+
   it("returns ordered partial failures for a JSON batch", () => {
     const child = spawnSync(process.execPath, ["--import", "tsx", cli], {
       cwd: new URL("..", import.meta.url),
